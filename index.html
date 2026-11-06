@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<!-- 历史完工报告 · 独立需求评审页面（自包含，零外部依赖） -->
+<html lang="zh-CN">
+<head><style id="gate-style">
+#gate{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 120% at 50% 0%,#0E7490 0%,#0D9488 55%,#0B5563 100%);font-family:var(--font-sans,system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif);}
+#gate .gate-card{background:#fff;border-radius:16px;padding:34px 38px;width:min(380px,92vw);box-shadow:0 24px 70px rgba(15,23,42,.35);text-align:center;}
+#gate .gate-logo{width:56px;height:56px;margin:0 auto 6px;}
+#gate h2{margin:10px 0 4px;font-size:21px;color:#0F172A;font-weight:700;}
+#gate .sub{color:#64748B;font-size:13px;margin-bottom:20px;}
+#gate .gate-row{display:flex;gap:8px;}
+#gate input{flex:1;padding:10px 12px;border:1px solid #CBD5E1;border-radius:8px;font-size:14px;outline:none;}
+#gate input:focus{border-color:#0E7490;box-shadow:0 0 0 3px rgba(14,116,144,.15);}
+#gate .gate-btn{padding:10px 18px;border:0;border-radius:8px;background:#0E7490;color:#fff;font-size:14px;cursor:pointer;}
+#gate .gate-btn:hover{background:#155E75;}
+#gate .gate-err{color:#DC2626;font-size:13px;margin-top:10px;min-height:16px;}
+</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>历史完工报告</title>
+<style>
+/* =========================================================
+   历史完工报告 — 页面样式
+   设计令牌见 :root；零外部资源（仅系统字体 + 内联 SVG/CSS 形状）
+   ========================================================= */
+:root{
+  /* 品牌色（风电青蓝 / 湖绿点缀） */
+  --primary:#0E7490; --primary-hover:#155E75; --primary-active:#164E63;
+  --primary-soft:#ECFEFF; --primary-soft-2:#CFFAFE; --on-primary:#FFFFFF;
+  --secondary:#0D9488; --secondary-hover:#0F766E; --secondary-active:#115E59;
+  --secondary-soft:#CCFBF1; --on-secondary:#FFFFFF;
+  /* 语义色（成功 / 警告 / 危险 / 信息） */
+  --success:#16A34A; --success-strong:#15803D; --success-soft:#DCFCE7; --success-text:#166534;
+  --warning:#D97706; --warning-strong:#B45309; --warning-soft:#FEF3C7; --warning-text:#92400E;
+  --danger:#DC2626;  --danger-strong:#B91C1C;  --danger-soft:#FEE2E2;  --danger-text:#991B1B;
+  --info:#0284C7;    --info-strong:#0369A1;    --info-soft:#E0F2FE;    --info-text:#075985;
+  /* 菜单分类标记：A=一期已有·本期优化（蓝） B=二期新增（琥珀） */
+  --cat-a:#2F7FC1; --cat-a-soft:#E8F1FA;
+  --cat-b:#E0913A; --cat-b-soft:#FCEFD9;
+  /* 中性灰阶（浅色骨架） */
+  --page-bg:#F4F7FA; --surface:#FFFFFF; --sub-surface:#F1F5F9;
+  --border:#E2E8F0;  --border-strong:#CBD5E1;
+  --text-1:#0F172A;  --text-2:#475569;  --text-3:#94A3B8;
+  /* 旧页面兼容别名（历史上部分页面引用了这些名字，统一指向标准令牌） */
+  --border-1:var(--border);
+  --bg-1:var(--sub-surface);
+  --bg-2:var(--surface);
+  /* 间距标度 */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
+  /* 圆角 */
+  --radius-sm:4px; --radius-md:8px; --radius-lg:12px; --radius-pill:9999px;
+  /* 阴影 Elevation */
+  --elev-1:0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06);
+  --elev-2:0 2px 4px rgba(15,23,42,.04),0 4px 8px rgba(15,23,42,.06);
+  --elev-3:0 4px 12px rgba(15,23,42,.08),0 8px 16px rgba(15,23,42,.06);
+  /* 聚焦环 */
+  --focus-ring:0 0 0 3px rgba(14,116,144,.25);
+  /* 外壳尺寸 */
+  --topbar-h:56px; --sidebar-w:220px;
+}
+
+/* ---------- 重置 ---------- */
+*,*::before,*::after{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Source Han Sans SC","Noto Sans CJK SC","WenQuanYi Micro Hei",sans-serif;
+  background:var(--page-bg);color:var(--text-1);
+  font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+a{text-decoration:none;color:inherit;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;}
+
+/* =========================================================
+   应用外壳
+   ========================================================= */
+.app{display:flex;flex-direction:column;min-height:100vh;}
+
+/* ---- 顶部导航 ---- */
+.topbar{
+  height:var(--topbar-h);flex-shrink:0;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 var(--sp-5);position:sticky;top:0;z-index:30;
+}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;}
+.brand-logo{width:28px;height:28px;display:block;flex-shrink:0;}
+.brand-name{font-size:16px;font-weight:600;color:var(--text-1);white-space:nowrap;}
+.top-actions{display:flex;align-items:center;gap:14px;flex-shrink:0;}
+.search-box{position:relative;display:flex;align-items:center;}
+.search-box svg{position:absolute;left:10px;width:16px;height:16px;color:var(--text-3);pointer-events:none;}
+.search-box input{
+  height:34px;width:240px;padding:0 12px 0 32px;
+  border:1px solid var(--border-strong);border-radius:var(--radius-md);
+  font-size:14px;color:var(--text-1);background:var(--surface);
+  transition:border-color .15s,box-shadow .15s;
+}
+.search-box input::placeholder{color:var(--text-3);}
+.search-box input:focus{outline:none;border-color:var(--primary);box-shadow:var(--focus-ring);}
+.icon-btn{
+  position:relative;width:36px;height:36px;border-radius:var(--radius-md);
+  display:flex;align-items:center;justify-content:center;color:var(--text-2);
+  transition:background .15s;
+}
+.icon-btn:hover{background:var(--sub-surface);}
+.icon-btn svg{width:20px;height:20px;}
+.badge{
+  position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;padding:0 5px;
+  border-radius:var(--radius-pill);background:var(--danger);color:#fff;
+  font-size:11px;font-weight:700;line-height:16px;text-align:center;
+}
+.avatar{
+  width:34px;height:34px;border-radius:var(--radius-pill);
+  background:var(--primary-soft-2);color:var(--primary);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:600;flex-shrink:0;
+}
+
+/* ---- 主体布局 ---- */
+.body-wrap{display:flex;flex:1;min-height:0;}
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--border);padding:var(--sp-4) var(--sp-3);
+  overflow-y:auto;
+}
+.group-title{
+  font-size:12px;font-weight:500;color:var(--text-3);
+  padding:var(--sp-4) 12px var(--sp-2);
+}
+.menu-item{
+  position:relative;display:flex;align-items:center;gap:10px;
+  height:40px;padding:0 12px;margin:2px 0;border-radius:var(--radius-md);
+  font-size:14px;font-weight:500;color:var(--text-2);
+  border-left:3px solid transparent;transition:background .15s,color .15s;
+}
+.menu-item:hover:not(.disabled):not(.active){background:var(--sub-surface);}
+.menu-item.active{
+  background:var(--primary-soft);color:var(--primary);
+  border-left-color:var(--primary);font-weight:600;
+}
+.menu-item.disabled{color:var(--text-3);cursor:not-allowed;}
+.menu-item .dot{width:6px;height:6px;border-radius:50%;background:var(--border-strong);flex-shrink:0;}
+.menu-item.active .dot{background:var(--primary);}
+/* 三级菜单（项目进度管理子项）：左侧缩进 + 左边框激活态 */
+.menu-sub{
+  position:relative;display:flex;align-items:center;gap:8px;
+  padding:7px 12px 7px 30px;margin-left:10px;
+  font-size:13px;font-weight:500;color:var(--text-2);
+  border-left:2px solid var(--border);
+}
+.menu-sub:hover:not(.disabled):not(.active){color:var(--primary);}
+.menu-sub.active{
+  color:var(--primary);font-weight:600;border-left-color:var(--primary);
+  background:rgba(14,116,144,.06);
+}
+.menu-sub.disabled{color:var(--text-3);cursor:not-allowed;}
+
+/* 侧栏一级菜单折叠/展开 */
+.group-title.collapsible{cursor:pointer;display:flex;align-items:center;justify-content:flex-start;user-select:none;}
+.group-title.collapsible::after{content:'';width:7px;height:7px;margin-left:auto;margin-right:4px;border-right:2px solid var(--text-3);border-bottom:2px solid var(--text-3);transform:rotate(45deg);transition:transform .18s ease;flex-shrink:0;}
+.group-title.collapsible:hover::after{border-color:var(--primary);}
+.group-title.collapsible.collapsed::after{transform:rotate(-45deg);}
+.hidden{display:none !important;}
+
+/* 菜单分类图例 */
+.cat-legend{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:4px 12px 10px;margin-bottom:2px;font-size:12px;color:var(--text-3);}
+.cat-legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+.cat-legend .a{background:var(--cat-a);}
+.cat-legend .b{background:var(--cat-b);}
+
+/* 顶部菜单进度筛选（位于 topbar 中部，与最上一排齐平） */
+.top-filter{
+  display:flex;align-items:center;justify-content:center;gap:14px;flex:1;min-width:0;flex-wrap:nowrap;
+}
+.tf-field{display:flex;align-items:center;gap:6px;}
+.tf-field > label{font-size:13px;color:var(--text-2);white-space:nowrap;}
+.top-filter .select-wrap{width:auto;}
+.top-filter .select-wrap select{min-width:140px;height:32px;font-size:13px;}
+.nf-legend{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text-3);flex-wrap:nowrap;white-space:nowrap;}
+.nf-legend span{display:inline-flex;align-items:center;}
+.nf-legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+.nf-legend i.a{background:var(--cat-a);}
+.nf-legend i.b{background:var(--cat-b);}
+.nf-count{
+  font-size:11px;color:var(--text-3);line-height:1.4;white-space:nowrap;
+}
+.nf-count b{color:var(--primary);font-weight:600;}
+.nf-clear{
+  font-size:13px;color:var(--primary);cursor:pointer;background:none;border:none;padding:0 2px;
+  font-family:inherit;font-weight:500;white-space:nowrap;
+}
+.nf-clear:hover{text-decoration:underline;}
+
+/* 窄屏时收起顶部筛选条的图例，避免与品牌/操作区争抢空间 */
+@media (max-width:1180px){
+  .top-filter .nf-legend{display:none;}
+}
+@media (max-width:980px){
+  .top-filter .nf-count{display:none;}
+}
+
+/* 分类色点：复用 menu-item 自带 .dot，menu-sub / group-title 追加 .m-dot */
+.menu-item.cat-a>.dot{background:var(--cat-a);}
+.menu-item.cat-b>.dot{background:var(--cat-b);}
+.m-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--border-strong);margin-right:8px;flex-shrink:0;vertical-align:middle;}
+.cat-a>.m-dot{background:var(--cat-a);}
+.cat-b>.m-dot{background:var(--cat-b);}
+.group-title.cat-a{color:var(--cat-a);}
+.group-title.cat-b{color:var(--cat-b);}
+
+/* =========================================================
+   侧栏导航（重构版：分组可折叠 + 二级嵌套 + 分类着色）
+   仅用于已重构页面（如 project-list.html），不影响旧结构
+   ========================================================= */
+.sidebar .nav{display:flex;flex-direction:column;gap:2px;}
+.nav-leaf{margin-bottom:2px;}
+
+/* 一级分组标题（可折叠） */
+.nav-group-title{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  padding:14px 12px 6px;background:none;border:none;cursor:pointer;text-align:left;
+  font-size:14px;font-weight:700;color:var(--text-1);
+  font-family:inherit;line-height:1.2;
+}
+.nav-group-title:hover{color:var(--primary);}
+.nav-group-title .label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nav-group.collapsed > .nav-group-body{display:none;}
+.nav-group-body{display:flex;flex-direction:column;}
+
+/* 链接（一级功能） */
+.nav-link{
+  position:relative;display:flex;align-items:center;gap:10px;
+  min-height:38px;padding:0 12px 0 18px;margin:1px 0;border-radius:var(--radius-md);
+  font-size:14px;font-weight:500;color:var(--text-2);
+  border-left:3px solid transparent;transition:background .15s,color .15s;
+}
+.nav-link:hover:not(.disabled):not(.active){background:var(--sub-surface);color:var(--text-1);}
+.nav-link.active{background:var(--primary-soft);color:var(--primary);border-left-color:var(--primary);font-weight:600;}
+.nav-link.disabled{color:var(--text-3);cursor:not-allowed;}
+.nav-link .dot{width:6px;height:6px;border-radius:50%;background:var(--border-strong);flex-shrink:0;}
+.nav-link.active .dot{background:var(--primary);}
+.nav-link .label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* 二级子分组（可折叠） */
+.nav-subgroup{margin:1px 0;}
+.nav-subgroup-title{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  padding:8px 12px 8px 18px;background:none;border:none;cursor:pointer;text-align:left;
+  font-size:13px;font-weight:600;color:var(--text-2);font-family:inherit;line-height:1.2;
+}
+.nav-subgroup-title:hover{color:var(--text-1);}
+.nav-subgroup.collapsed > .nav-subgroup-body{display:none;}
+.nav-subgroup-body{
+  display:flex;flex-direction:column;margin-left:18px;padding-left:0;
+  border-left:1px solid var(--border);
+}
+.nav-link.sub{
+  position:relative;
+  font-size:12.5px;font-weight:400;padding:0 12px 0 16px;color:var(--text-2);
+}
+.nav-link.sub:hover:not(.disabled):not(.active){background:var(--sub-surface);color:var(--text-1);}
+
+/* 折叠箭头（展开=右下 45°，折叠=-45°） */
+.chev{
+  width:6px;height:6px;flex-shrink:0;margin-right:2px;opacity:.6;
+  border-right:2px solid currentColor;border-bottom:2px solid currentColor;
+  transform:rotate(45deg);transition:transform .18s ease;
+}
+.nav-group.collapsed > .nav-group-title .chev,
+.nav-subgroup.collapsed > .nav-subgroup-title .chev{transform:rotate(-45deg);}
+
+/* 分类着色（复用 .cat-a / .cat-b 与 .m-dot） */
+.nav-link.cat-a > .dot{background:var(--cat-a);}
+.nav-link.cat-b > .dot{background:var(--cat-b);}
+.nav-group-title.cat-a{color:var(--cat-a);}
+.nav-group-title.cat-b{color:var(--cat-b);}
+.nav-subgroup-title.cat-a{color:var(--cat-a);}
+.nav-subgroup-title.cat-b{color:var(--cat-b);}
+
+.main{flex:1;min-width:0;padding:var(--sp-5);overflow-y:auto;}
+.page-head{margin-bottom:var(--sp-5);}
+.page-title{font-size:24px;font-weight:700;color:var(--text-1);margin:0;line-height:1.3;}
+.page-subtitle{font-size:14px;font-weight:400;color:var(--text-2);margin:6px 0 0;}
+
+/* =========================================================
+   通用组件
+   ========================================================= */
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:var(--sp-4);flex-wrap:wrap;}
+.toolbar .left{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+
+/* KPI 卡片 */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4);margin-bottom:var(--sp-5);}
+.kpi-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:var(--sp-5);box-shadow:var(--elev-1);
+}
+.kpi-label{font-size:14px;font-weight:500;color:var(--text-2);margin:0;}
+.kpi-value{font-size:32px;font-weight:700;color:var(--text-1);margin:10px 0 0;line-height:1.1;font-variant-numeric:tabular-nums;}
+.kpi-value .unit{font-size:14px;font-weight:500;color:var(--text-3);margin-left:4px;}
+.kpi-sub{font-size:12px;color:var(--text-3);margin:8px 0 0;}
+
+/* 卡片 */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--elev-1);margin-bottom:var(--sp-5);overflow:hidden;}
+/* 筛选卡（历史上各页本地重复定义，现收编为权威定义，视觉与 .card 一致） */
+.query-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--elev-1);padding:var(--sp-4);margin-bottom:var(--sp-4);}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--border);}
+.card-title{font-size:16px;font-weight:600;color:var(--text-1);margin:0;}
+.card-body{padding:var(--sp-5);}
+
+/* 汇总条（项目月度页） */
+.summary-bar{
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+  background:var(--primary-soft);border:1px solid var(--primary-soft-2);
+  border-radius:var(--radius-lg);padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-5);
+}
+.summary-bar .s-label{font-size:14px;font-weight:500;color:var(--text-2);}
+.summary-bar .s-value{font-size:28px;font-weight:700;color:var(--primary);font-variant-numeric:tabular-nums;}
+.summary-bar .s-unit{font-size:14px;font-weight:500;color:var(--primary);}
+
+/* 脚注提示 */
+.note{font-size:12px;color:var(--text-3);margin:12px 2px 0;line-height:1.6;}
+
+/* ---------- 按钮 ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  height:36px;padding:0 16px;border-radius:var(--radius-md);
+  font-size:14px;font-weight:500;line-height:1;white-space:nowrap;
+  transition:background .15s,box-shadow .15s,border-color .15s,color .15s;
+}
+.btn:focus-visible{outline:none;box-shadow:var(--focus-ring);}
+.btn svg{width:16px;height:16px;}
+.btn-primary{background:var(--primary);color:var(--on-primary);}
+.btn-primary:hover{background:var(--primary-hover);}
+.btn-primary:active{background:var(--primary-active);}
+.btn-secondary{background:var(--surface);color:var(--primary);border:1px solid var(--border-strong);}
+.btn-secondary:hover{background:var(--primary-soft);border-color:var(--primary);}
+.btn-secondary:active{background:var(--primary-soft-2);}
+.btn-ghost{background:transparent;color:var(--primary);padding:0 8px;height:32px;}
+.btn-ghost:hover{background:var(--primary-soft);}
+.btn-ghost:active{background:var(--primary-soft-2);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-danger:hover{background:var(--danger-strong);}
+.btn-sm{height:28px;padding:0 12px;font-size:13px;}
+.btn-lg{height:40px;padding:0 20px;font-size:14px;}
+.btn:disabled,.btn[disabled]{background:var(--border);color:var(--text-3);cursor:not-allowed;}
+
+/* ---------- 表格 ---------- */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow-x:auto;box-shadow:var(--elev-1);}
+table.data{width:100%;border-collapse:collapse;min-width:1000px;}
+table.data thead th{
+  background:var(--sub-surface);color:var(--text-2);
+  font-size:13px;font-weight:600;text-align:left;
+  padding:12px 16px;border-bottom:1px solid var(--border);white-space:nowrap;
+}
+table.data tbody td{
+  padding:12px 16px;font-size:14px;color:var(--text-1);
+  border-bottom:1px solid var(--border);white-space:nowrap;
+}
+table.data tbody tr:last-child td{border-bottom:none;}
+table.data tbody tr:nth-child(even){background:#F8FAFC;}
+table.data tbody tr:hover{background:var(--primary-soft);}
+.data tbody tr.just-added{box-shadow:inset 3px 0 0 var(--primary);background:var(--primary-soft);}
+table.data .num{font-variant-numeric:tabular-nums;text-align:right;}
+td .muted{color:var(--text-3);}
+.actions{display:flex;gap:4px;}
+
+/* 进度条（完成比例） */
+.progress{display:flex;align-items:center;gap:10px;min-width:210px;}
+.progress-track{flex:1;height:6px;background:var(--sub-surface);border-radius:var(--radius-pill);overflow:hidden;}
+.progress-bar{height:100%;border-radius:var(--radius-pill);}
+.progress-bar.green{background:var(--success);}
+.progress-bar.red{background:var(--danger);}
+.progress-bar.info{background:var(--info);}
+.progress-bar.amber{background:var(--warning);}
+.progress-bar.gray{background:var(--text-3);}
+.progress-pct{font-size:13px;font-weight:600;min-width:52px;text-align:right;font-variant-numeric:tabular-nums;}
+.progress-pct.green{color:var(--success-strong);}
+.progress-pct.red{color:var(--danger-strong);}
+.progress-pct.info{color:var(--info-strong);}
+.progress-pct.amber{color:var(--warning-strong);}
+.progress-pct.gray{color:var(--text-2);}
+.progress-tag{font-size:11px;font-weight:600;padding:1px 8px;border-radius:var(--radius-pill);white-space:nowrap;flex-shrink:0;}
+.progress-tag.green{background:var(--success-soft);color:var(--success-text);}
+.progress-tag.info{background:var(--info-soft);color:var(--info-text);}
+.progress-tag.amber{background:var(--warning-soft);color:var(--warning-text);}
+.progress-tag.red{background:var(--danger-soft);color:var(--danger-text);}
+
+/* 状态标签 */
+.tag{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:var(--radius-pill);font-size:12px;font-weight:500;line-height:1.6;white-space:nowrap;}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
+.tag-green{background:var(--success-soft);color:var(--success-text);}
+.tag-red{background:var(--danger-soft);color:var(--danger-text);}
+.tag-gray{background:var(--sub-surface);color:var(--text-2);}
+.tag-info{background:var(--info-soft);color:var(--info-text);}
+.tag-warn{background:var(--warning-soft);color:var(--warning-text);}
+
+/* ---------- 表单 ---------- */
+.field{display:flex;flex-direction:column;gap:8px;}
+.field label{font-size:14px;font-weight:500;color:var(--text-2);}
+.field .hint{font-size:12px;color:var(--text-3);}
+.field .req{color:var(--danger);margin-left:2px;}
+.select-wrap,.input-wrap{position:relative;display:flex;}
+.select-wrap select,.input-wrap input{
+  width:100%;height:36px;padding:0 12px;
+  border:1px solid var(--border-strong);border-radius:var(--radius-md);
+  font-size:14px;color:var(--text-1);background:var(--surface);
+  transition:border-color .15s,box-shadow .15s;
+}
+.select-wrap select{appearance:none;-webkit-appearance:none;padding-right:32px;cursor:pointer;}
+.select-wrap::after{content:"";position:absolute;right:12px;top:50%;transform:translateY(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--text-2);pointer-events:none;}
+.select-wrap select:focus,.input-wrap input:focus{outline:none;border-color:var(--primary);box-shadow:var(--focus-ring);}
+.select-wrap select:disabled,.input-wrap input:disabled{background:var(--sub-surface);color:var(--text-3);border-color:var(--border);cursor:not-allowed;}
+.error-msg{font-size:12px;color:var(--danger-text);display:none;}
+.field.has-error .error-msg{display:block;}
+.field.has-error .select-wrap select,.field.has-error .input-wrap input{border-color:var(--danger);box-shadow:0 0 0 3px rgba(220,38,38,.18);}
+
+/* 筛选行（按年度 / 月度筛选） */
+.filter-row{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:var(--sp-4);}
+.filter-row .field{width:160px;}
+.filter-row .field label{font-size:13px;}
+.filter-row .spacer{flex:1;}
+
+/* ---------- 弹窗 (原生 dialog) ---------- */
+dialog.modal{
+  border:none;border-radius:var(--radius-lg);padding:0;
+  width:480px;max-width:calc(100vw - 32px);
+  max-height:94vh;
+  background:var(--surface);color:var(--text-1);box-shadow:var(--elev-3);margin:auto;
+}
+dialog.modal[open]{display:flex;flex-direction:column;}
+dialog.modal::backdrop{background:rgba(15,23,42,.45);}
+dialog.modal[open] > form{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--border);flex-shrink:0;}
+.modal-title{font-size:16px;font-weight:600;margin:0;}
+.modal-close{width:32px;height:32px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;color:var(--text-2);transition:background .15s;}
+.modal-close:hover{background:var(--sub-surface);}
+.modal-close svg{width:18px;height:18px;}
+.modal-body{padding:var(--sp-5);display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1 1 auto;min-height:0;}
+.modal-foot{padding:var(--sp-4) var(--sp-5);border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:12px;flex-shrink:0;}
+
+/* 弹框内表格/进度条：去除最小宽度与横向滚动，字段自适应换行，确保一屏览尽 */
+dialog.modal .table-wrap{overflow:visible;border:none;box-shadow:none;}
+dialog.modal table.data{min-width:0;table-layout:auto;}
+dialog.modal table.data thead th{white-space:normal;padding:9px 10px;}
+dialog.modal table.data tbody td{white-space:normal;padding:9px 10px;font-size:13px;line-height:1.45;}
+dialog.modal .progress{min-width:0;gap:8px;}
+dialog.modal .progress-pct{min-width:46px;}
+dialog.modal .actions{flex-wrap:wrap;}
+
+/* 详情网格 / 条件隐藏 / 入口按钮 / 提示条 */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;margin-top:4px;}
+.detail-item{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.detail-item .k{font-size:12px;color:var(--text-3);}
+.detail-item .v{font-size:14px;color:var(--text-1);font-weight:500;word-break:break-word;}
+.detail-item.full{grid-column:1 / -1;}
+.detail-section-title{font-size:14px;font-weight:600;color:var(--text-1);margin:18px 0 4px;display:flex;align-items:center;gap:8px;}
+.detail-section-title::before{content:"";width:3px;height:14px;background:var(--primary);border-radius:2px;}
+.entry-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;}
+.hide{display:none !important;}
+.toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);background:var(--text-1);color:#fff;padding:10px 18px;border-radius:var(--radius-md);font-size:13px;box-shadow:var(--elev-3);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:9999;max-width:80vw;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* 合同类型分段（虚拟/真实） */
+.seg{display:inline-flex;border:1px solid var(--border-strong);border-radius:var(--radius-md);overflow:hidden;}
+.seg button{border:none;background:var(--surface);padding:0 14px;height:34px;font-size:13px;color:var(--text-2);cursor:pointer;}
+.seg button.active{background:var(--primary);color:var(--on-primary);}
+
+/* 列表内可点击编号 / 空态 */
+.link-btn{background:none;border:none;color:var(--primary);font-weight:600;cursor:pointer;padding:0;font-size:14px;font-family:inherit;}
+.link-btn:hover{text-decoration:underline;}
+.empty-hint{text-align:center;color:var(--text-2);font-size:13px;padding:22px 0;}
+
+/* 按月分解网格（新增年度计划） */
+.month-grid-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.month-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 12px;}
+.mg-cell{display:flex;flex-direction:column;gap:4px;}
+.mg-cell span{font-size:12px;font-weight:500;color:var(--text-2);}
+.mg-cell input{height:34px;padding:0 10px;border:1px solid var(--border-strong);border-radius:var(--radius-md);font-size:14px;color:var(--text-1);background:var(--surface);font-variant-numeric:tabular-nums;transition:border-color .15s,box-shadow .15s;}
+.mg-cell input:focus{outline:none;border-color:var(--primary);box-shadow:var(--focus-ring);}
+.month-sum{margin-top:10px;font-size:13px;font-weight:500;}
+.month-sum.ok{color:var(--success-text);}
+.month-sum.bad{color:var(--danger-text);}
+
+/* ---------- Tabs ---------- */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:var(--sp-5);}
+.tab{
+  position:relative;padding:12px 16px;font-size:14px;font-weight:500;color:var(--text-2);
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;background:none;
+}
+.tab:hover{color:var(--text-1);}
+.tab.active{color:var(--primary);font-weight:600;border-bottom-color:var(--primary);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .kpi-grid{grid-template-columns:1fr;}
+  .search-box input{width:160px;}
+  .brand-name{display:none;}
+}
+
+</style>
+<style>
+/* ===== A. 设计令牌（禁止改动任何色值） ===== */
+:root{
+  /* 品牌色 */
+  --primary:#0E7490; --primary-hover:#155E75; --primary-active:#164E63;
+  --primary-soft:#ECFEFF; --primary-soft-2:#CFFAFE; --on-primary:#FFFFFF;
+  --secondary:#0D9488; --secondary-hover:#0F766E; --secondary-active:#115E59;
+  --secondary-soft:#CCFBF1; --on-secondary:#FFFFFF;
+  /* 语义色 */
+  --success:#16A34A; --success-strong:#15803D; --success-soft:#DCFCE7; --success-text:#166534;
+  --warning:#D97706; --warning-strong:#B45309; --warning-soft:#FEF3C7; --warning-text:#92400E;
+  --danger:#DC2626;  --danger-strong:#B91C1C;  --danger-soft:#FEE2E2;  --danger-text:#991B1B;
+  --info:#0284C7;    --info-strong:#0369A1;    --info-soft:#E0F2FE;    --info-text:#075985;
+  /* 中性灰阶 */
+  --page-bg:#F4F7FA; --surface:#FFFFFF; --sub-surface:#F1F5F9;
+  --border:#E2E8F0;  --border-strong:#CBD5E1;
+  --text-1:#0F172A;  --text-2:#475569;  --text-3:#94A3B8;
+  /* 间距 */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
+  /* 圆角 */
+  --radius-sm:4px; --radius-md:8px; --radius-lg:12px; --radius-pill:9999px;
+  /* 阴影 */
+  --elev-1:0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06);
+  --elev-2:0 2px 4px rgba(15,23,42,.04),0 4px 8px rgba(15,23,42,.06);
+  --elev-3:0 4px 12px rgba(15,23,42,.08),0 8px 16px rgba(15,23,42,.06);
+  /* 聚焦环 */
+  --focus-ring:0 0 0 3px rgba(14,116,144,.25);
+}
+
+/* ===== B. 本页扩展变量（仅追加；不覆盖 A 段；全部派生自 A 段语义令牌） ===== */
+:root{
+  /* 字体栈：系统字体栈 / 等宽栈 */
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Source Han Sans SC","Noto Sans CJK SC","WenQuanYi Micro Hei",sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+
+  /* 19 列宽表：容器最小宽度与列宽分组（总宽按可见列由脚本动态计算） */
+  --tbl-min-w:2266px;
+  --col-idx:48px;       /* 序号（冻结首列） */
+  --col-long:150px;     /* 长文本 */
+  --col-mid:120px;      /* 中文本 */
+  --col-code:126px;     /* 短码 mono */
+  --col-short:80px;     /* 短值 / 枚举 */
+  --col-date:92px;      /* 结算月份 */
+  --col-status:160px;   /* 状态 */
+  --col-ops:168px;      /* 操作栏（冻结末列） */
+  --tbl-preview-w:1900px; /* 弹窗内 16 列预览表 */
+
+  /* 冻结列层级与分隔（用 box-shadow 而非 border，避免 1px 抖动） */
+  --z-sticky-head:3;
+  --z-sticky-cell:2;
+  --sticky-shadow-r:1px 0 0 var(--border);
+  --sticky-shadow-l:-1px 0 0 var(--border), -6px 0 12px -6px rgba(15,23,42,.18);
+
+}
+
+/* ===== 组件补齐 ===== */
+/* 表单网格 */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--sp-4);}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:var(--sp-4);}
+.required-mark{color:var(--danger);font-style:normal;margin-left:2px;}
+/* 列表工具条 */
+.table-toolbar{display:flex;justify-content:space-between;align-items:center;margin:4px 0 10px;flex-wrap:wrap;gap:10px;}
+.table-toolbar .t-title{font-size:14px;font-weight:600;color:var(--text-1);}
+/* 分页 */
+.pager{display:flex;align-items:center;gap:12px;justify-content:flex-end;margin-top:var(--sp-4);font-size:13px;color:var(--text-2);flex-wrap:wrap;}
+.pager select{height:32px;padding:0 8px;border:1px solid var(--border-strong);border-radius:var(--radius-md);background:var(--surface);font-size:13px;color:var(--text-1);}
+.pager select:focus{outline:none;border-color:var(--primary);box-shadow:var(--focus-ring);}
+.pager .pg-btn{appearance:none;border:1px solid var(--border-strong);background:var(--surface);border-radius:var(--radius-md);height:32px;padding:0 12px;cursor:pointer;color:var(--text-1);font-size:13px;transition:background .15s,border-color .15s;}
+.pager .pg-btn:hover:not(:disabled){background:var(--primary-soft);border-color:var(--primary);color:var(--primary);}
+.pager .pg-btn:disabled{opacity:.45;cursor:not-allowed;}
+/* 表格列 */
+.data .col-index{width:46px;text-align:center;color:var(--text-3);}
+.data .col-actions{text-align:right;min-width:320px;}
+.data .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:var(--text-1);}
+.data .actions{justify-content:flex-end;flex-wrap:wrap;gap:6px;}
+#mainTable .col-actions .actions{justify-content:flex-start;}
+/* 校验卡片 */
+.verify-box{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-4);}
+.verify-box .vb{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--elev-1);padding:var(--sp-4) var(--sp-5);}
+.verify-box .vb .k{font-size:12px;color:var(--text-3);}
+.verify-box .vb .v{font-size:22px;font-weight:700;margin-top:3px;color:var(--text-1);font-variant-numeric:tabular-nums;}
+.verify-miss{background:var(--danger-soft);border:1px solid var(--danger);border-radius:var(--radius-lg);padding:var(--sp-3) var(--sp-4);font-size:13px;color:var(--danger-text);line-height:1.7;}
+.verify-ok{background:var(--success-soft);border:1px solid var(--success);border-radius:var(--radius-lg);padding:var(--sp-3) var(--sp-4);font-size:13px;color:var(--success-text);}
+/* 面包屑 */
+.crumb{font-size:12.5px;color:var(--text-3);margin-top:4px;}
+.crumb b{color:var(--primary);font-weight:600;}
+
+/* ===== 宽表（列组与表头按显示配置动态渲染） ===== */
+.table-wrap{overflow-x:auto;overflow-y:visible;min-width:0;max-width:100%;scrollbar-color:var(--border-strong) transparent;scrollbar-width:thin;}
+#mainTable{width:var(--tbl-min-w);min-width:100%;table-layout:fixed;}
+#mainTable col.c-idx{width:var(--col-idx);}
+#mainTable col.c-long{width:var(--col-long);}
+#mainTable col.c-mid{width:var(--col-mid);}
+#mainTable col.c-code{width:var(--col-code);}
+#mainTable col.c-short{width:var(--col-short);}
+#mainTable col.c-date{width:var(--col-date);}
+#mainTable col.c-status{width:var(--col-status);}
+#mainTable col.c-ops{width:var(--col-ops);}
+/* 冻结首列与末列 */
+#mainTable thead th:first-child,
+#mainTable thead th:last-child{position:sticky;z-index:var(--z-sticky-head);background:var(--sub-surface);}
+#mainTable thead th:first-child{left:0;box-shadow:var(--sticky-shadow-r);}
+#mainTable thead th:last-child{right:0;box-shadow:var(--sticky-shadow-l);}
+#mainTable tbody td:first-child,
+#mainTable tbody td:last-child{position:sticky;z-index:var(--z-sticky-cell);background:var(--surface);}
+#mainTable tbody td:first-child{left:0;box-shadow:var(--sticky-shadow-r);}
+#mainTable tbody td:last-child{right:0;box-shadow:var(--sticky-shadow-l);}
+/* 关键：冻结单元格同步斑马纹 / 悬停 / 选中 / just-added 四类底色 */
+#mainTable tbody tr:nth-child(even) td:first-child,
+#mainTable tbody tr:nth-child(even) td:last-child{background:#F8FAFC;}
+#mainTable tbody tr:hover td:first-child,
+#mainTable tbody tr:hover td:last-child{background:var(--primary-soft);}
+#mainTable tbody tr.row-selected{background:var(--primary-soft-2);}
+#mainTable tbody tr.row-selected td:first-child,
+#mainTable tbody tr.row-selected td:last-child{background:var(--primary-soft-2);}
+#mainTable tbody tr.just-added td:first-child,
+#mainTable tbody tr.just-added td:last-child{background:var(--primary-soft);}
+/* 长文本截断、title、编码列 mono、数字对齐 */
+#mainTable tbody td.clip,#previewTable tbody td.clip,#errTable tbody td.clip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#mainTable tbody td.mono,#mainTable tbody td.num{font-variant-numeric:tabular-nums;}
+#mainTable .col-index{width:auto;text-align:center;}
+#mainTable .col-actions{min-width:0;text-align:right;}
+/* 操作栏 3 个按钮锁定单行，保持 44px 行高不换行 */
+#mainTable td.col-actions{padding:12px 8px;}
+#mainTable .col-actions .btn-sm{padding:0 6px;}
+
+/* ===== 统计条 / 空态 ===== */
+.summary-bar.stats{align-items:center;justify-content:flex-start;gap:var(--sp-6);}
+.stat{display:flex;flex-direction:column;gap:4px;min-width:96px;}
+.stat-value{font-size:24px;font-weight:700;color:var(--text-1);font-variant-numeric:tabular-nums;line-height:1.3;}
+.stat-progress{min-width:240px;}
+#summaryBar .progress-bar.green{transition:width .3s;}
+.guide-wrap{text-align:center;padding:var(--sp-6) var(--sp-5);}
+.guide-icon{width:48px;height:48px;color:var(--text-3);display:block;margin:0 auto var(--sp-4);}
+.guide-title{font-size:20px;font-weight:600;color:var(--text-1);margin:0 0 var(--sp-2);line-height:1.4;}
+.guide-actions{display:flex;justify-content:center;gap:var(--sp-3);margin-bottom:var(--sp-4);flex-wrap:wrap;}
+.t-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+
+/* ===== 拖拽区 ===== */
+.dropzone{
+  border:1.5px dashed var(--border-strong);border-radius:var(--radius-lg);
+  background:var(--surface);color:var(--text-2);
+  padding:var(--sp-6) var(--sp-5);text-align:center;font-size:14px;line-height:1.6;
+  cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s;
+}
+.dropzone:hover{border-color:var(--primary);background:var(--primary-soft);}
+.dropzone.is-dragover{border-color:var(--primary);background:var(--primary-soft);box-shadow:var(--focus-ring);}
+.dropzone.has-file{
+  border-style:solid;border-color:var(--success);background:var(--success-soft);
+  color:var(--success-text);text-align:left;cursor:default;
+}
+.dropzone.has-error{
+  border-style:solid;border-color:var(--danger);background:var(--danger-soft);
+  color:var(--danger-text);box-shadow:0 0 0 3px rgba(220,38,38,.18);
+}
+.dropzone .dz-icon{width:32px;height:32px;color:var(--primary);display:block;margin:0 auto var(--sp-3);}
+.dropzone .dz-file{font-family:var(--font-mono);font-size:14px;font-weight:600;word-break:break-all;}
+.dropzone .dz-meta{font-size:12px;color:var(--text-2);margin-top:var(--sp-1);}
+.alt-file{font-size:12px;color:var(--text-3);margin-top:var(--sp-3);line-height:1.6;}
+.ur-hint{font-size:14px;color:var(--text-2);line-height:1.6;}
+.ur-state{display:flex;flex-direction:column;gap:var(--sp-3);}
+.ur-state .progress{width:100%;}
+.ur-tip{font-size:14px;color:var(--info-text);}
+.no-file{background:var(--sub-surface);border:1px dashed var(--border-strong);border-radius:var(--radius-lg);padding:var(--sp-4);text-align:center;font-size:14px;color:var(--text-3);}
+.file-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;}
+.file-item{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.file-item .k{font-size:12px;color:var(--text-3);}
+.file-item .v{font-size:14px;color:var(--text-1);font-weight:500;word-break:break-all;}
+.vb.is-bad{border-color:var(--danger);}
+.vb.is-bad .v{color:var(--danger-text);}
+.fail-head{display:flex;align-items:flex-start;gap:var(--sp-3);margin-bottom:var(--sp-4);}
+.fail-head > svg{width:32px;height:32px;color:var(--danger);flex-shrink:0;}
+.fail-title{font-size:20px;font-weight:600;color:var(--danger-text);margin:0;}
+.fail-sub{font-size:14px;color:var(--text-2);margin:4px 0 0;line-height:1.6;}
+.err-table td .muted{color:var(--text-3);}
+
+/* ===== 解析预览表 ===== */
+dialog.modal.preview-modal{width:min(1180px,calc(100vw - 48px));}
+dialog.modal.preview-modal .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:none;}
+dialog.modal.preview-modal table.data{width:var(--tbl-preview-w);min-width:var(--tbl-preview-w);table-layout:fixed;white-space:nowrap;}
+dialog.modal.preview-modal table.data thead th,
+dialog.modal.preview-modal table.data tbody td{white-space:nowrap;}
+#previewTable col.c-long{width:var(--col-long);}
+#previewTable col.c-mid{width:var(--col-mid);}
+#previewTable col.c-code{width:var(--col-code);}
+#previewTable col.c-short{width:var(--col-short);}
+#previewTable col.c-date{width:var(--col-date);}
+
+/* ===== 自定义显示字段 ===== */
+.col-cfg-top{display:flex;align-items:center;gap:14px;margin-bottom:12px;font-size:13px;}
+.col-cfg-top .muted{color:var(--text-3);}
+.col-cfg-top .link-btn{margin-left:auto;}
+.col-cfg-top .link-btn + .link-btn{margin-left:0;}
+.col-cfg-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 12px;}
+.col-cfg-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-md);font-size:13px;color:var(--text-1);cursor:pointer;user-select:none;background:var(--surface);}
+.col-cfg-item:hover{border-color:var(--primary);background:var(--primary-soft);}
+.col-cfg-item input{width:15px;height:15px;margin:0;flex-shrink:0;accent-color:var(--primary);cursor:pointer;}
+.col-cfg-fixed{margin-top:14px;font-size:12.5px;color:var(--text-2);}
+@media(max-width:620px){.col-cfg-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* ===== 完工报告编号预览入口 ===== */
+#mainTable td .num-link{font:inherit;color:var(--primary);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-decoration-color:var(--primary-soft-2);text-underline-offset:3px;}
+#mainTable td .num-link:hover{color:var(--primary-active);text-decoration-color:var(--primary);}
+
+/* ===== 完工报告文件预览 ===== */
+.detail-preview{border:1px solid var(--border);border-radius:var(--radius-md);background:var(--sub-surface);padding:8px;text-align:center;}
+.detail-preview .fp-img{max-width:100%;max-height:230px;display:inline-block;border-radius:var(--radius-sm);box-shadow:var(--elev-1);}
+.detail-preview .fp-frame{width:100%;height:230px;border:0;background:#FFFFFF;}
+.fp-meta{font-size:13px;color:var(--text-2);margin-bottom:12px;word-break:break-all;}
+.fp-stage{border:1px solid var(--border);border-radius:var(--radius-md);background:var(--sub-surface);min-height:360px;display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto;}
+.fp-stage .fp-img{max-width:100%;max-height:64vh;box-shadow:var(--elev-2);border-radius:var(--radius-sm);}
+.fp-stage .fp-frame{width:100%;height:64vh;min-height:360px;border:0;background:#FFFFFF;}
+.fp-unsupported{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--text-2);font-size:14px;line-height:1.7;text-align:center;padding:24px;}
+.fp-unsupported svg{width:36px;height:36px;color:var(--text-3);}
+
+/* 独立评审页：页头标识 */
+/* ===== 无障碍 ===== */
+#mainTable td .num-link:focus-visible,.col-cfg-item input:focus-visible,.pager .pg-btn:focus-visible{outline:none;box-shadow:var(--focus-ring);border-radius:var(--radius-sm);}
+@media(prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
+
+.page-head-row{display:flex;align-items:center;gap:12px;}
+.page-head-row .brand-logo{width:32px;height:32px;flex-shrink:0;}
+</style>
+</head>
+<body><div id="gate">
+  <div class="gate-card">
+    <div class="gate-logo"><svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#0E7490" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.4"/><path d="M12 9.6 12 2M12 14.4 19 18M12 14.4 5 18"/></svg></div>
+    <h2>历史完工报告 · 演示</h2>
+    <div class="sub">请输入查看密码以进入演示</div>
+    <div class="gate-row">
+      <input id="gatePwd" type="password" placeholder="查看密码" autocomplete="off" aria-label="查看密码">
+      <button id="gateBtn" class="gate-btn" type="button">进入</button>
+    </div>
+    <div id="gateErr" class="gate-err"></div>
+  </div>
+</div>
+<div class="app">
+
+<div class="body-wrap">
+<!-- ===== 主内容 ===== -->
+    <main class="main">
+      <div class="page-head">
+        <div class="page-head-row">
+          <svg class="brand-logo" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+            <g fill="#0E7490"><ellipse cx="14" cy="8.5" rx="2.6" ry="6.5"/><ellipse cx="14" cy="8.5" rx="2.6" ry="6.5" transform="rotate(120 14 14)"/><ellipse cx="14" cy="8.5" rx="2.6" ry="6.5" transform="rotate(240 14 14)"/></g>
+            <circle cx="14" cy="14" r="3" fill="#155E75"/>
+          </svg>
+          <div>
+            <h1 class="page-title">历史完工报告</h1>
+            <p class="page-subtitle">台账导入与管理</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 统计条 -->
+      <div class="summary-bar stats" id="summaryBar">
+        <div class="stat"><span class="s-label">完工报告总数</span><span class="stat-value" id="sumTotal">0</span></div>
+        <div class="stat"><span class="s-label">已上传</span><span class="stat-value" id="sumDone">0</span></div>
+        <div class="stat"><span class="s-label">未上传</span><span class="stat-value" id="sumTodo">0</span></div>
+        <div class="stat stat-progress">
+          <span class="s-label">完工报告完成进度</span>
+          <div class="progress">
+            <div class="progress-track" id="progTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="完工报告完成进度">
+              <div class="progress-bar green" id="progBar" style="width:0%"></div>
+            </div>
+            <span class="progress-pct green" id="progPct">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 工具栏 -->
+      <div class="table-toolbar" id="mainToolbar">
+        <span class="t-title">完工报告台账 <span class="muted" id="resultCount" style="font-size:14px;font-weight:400;">共 0 条</span></span>
+        <div class="t-actions">
+          <button class="btn btn-primary btn-sm" type="button" onclick="openUploadInfo()">上传信息表</button>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="downloadTemplate()">下载信息表模板</button>
+        </div>
+      </div>
+
+<!-- 校验失败 -->
+      <section class="card hide" id="viewVerifyFail">
+        <div class="card-head">
+          <span class="card-title">信息表校验结果</span>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="closeVerifyFail()">返回</button>
+        </div>
+        <div class="card-body">
+          <div class="fail-head">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div><h3 class="fail-title">信息表校验未通过</h3><p class="fail-sub">文件「<span id="vfFileName">完工报告导入信息表_2026Q1.xlsx</span>」未通过校验，请修正后重新上传。本次不允许导入。</p></div>
+          </div>
+          <div class="verify-box">
+            <div class="vb is-bad"><div class="k">缺列数</div><div class="v">1</div></div>
+            <div class="vb is-bad"><div class="k">空值处数</div><div class="v">2</div></div>
+            <div class="vb is-bad"><div class="k">重复编号条数</div><div class="v">1</div></div>
+            <div class="vb is-bad"><div class="k">格式错误</div><div class="v">2</div></div>
+          </div>
+          <div class="verify-miss">共发现 <b>5 处</b>问题，涉及 5 行：缺少列「班组性质」；1 处必填字段为空、1 处数据缺失；「完工报告编号」存在重复；「结算月份」与「外包合同编号」格式不符合规范。请下载错误明细逐行定位，修正后重新上传。</div>
+          <div class="detail-section-title" style="margin-top:18px;">逐行错误定位</div>
+          <div class="table-wrap">
+            <table class="data" id="errTable">
+              <thead><tr><th style="width:80px;">行号</th><th style="width:80px;">列号</th><th style="width:180px;">字段</th><th style="width:180px;">错误类型</th><th>原值</th></tr></thead>
+              <tbody id="errTbody"></tbody>
+            </table>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-secondary" type="button" onclick="downloadErrorDetail()">下载错误明细</button>
+            <button class="btn btn-primary" type="button" onclick="reuploadInfo()">重新上传</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 台账清单 -->
+      <section id="viewList" class="hide">
+        <!-- 筛选区 -->
+        <div class="query-card">
+          <div class="card-title" style="margin-bottom:var(--sp-4);display:flex;align-items:center;gap:8px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary);" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            筛选条件
+          </div>
+          <div class="form-grid">
+            <div class="field"><label>客户名称或简称</label><div class="input-wrap"><input type="text" id="q-customer" placeholder="如 华能新能源"></div></div>
+            <div class="field"><label>合同编号</label><div class="input-wrap"><input type="text" id="q-contract" placeholder="如 XS-2026-0001"></div></div>
+            <div class="field"><label>项目名称</label><div class="input-wrap"><input type="text" id="q-project" placeholder="请输入项目名称"></div></div>
+            <div class="field"><label>项目编号</label><div class="input-wrap"><input type="text" id="q-projectNo" placeholder="如 XM-2026-0001"></div></div>
+            <div class="field"><label>风场名称</label><div class="input-wrap"><input type="text" id="q-farm" placeholder="如 张北风电场"></div></div>
+            <div class="field"><label>班组名称</label><div class="input-wrap"><input type="text" id="q-team" placeholder="如 瑞风一班"></div></div>
+            <div class="field"><label>完工报告编号</label><div class="input-wrap"><input type="text" id="q-report" placeholder="如 WG-2026-0001"></div></div>
+            <div class="field"><label>结算月份</label><div class="input-wrap"><input type="month" id="q-month"></div></div>
+            <div class="field"><label>上传状态</label><div class="select-wrap"><select id="q-status"><option value="">全部</option><option value="未上传">未上传</option><option value="已上传">已上传</option></select></div></div>
+            <div class="field"><label>关键字搜索</label><div class="input-wrap"><input type="text" id="q-key" placeholder="客户 / 合同 / 项目 / 风场 / 班组 / 编号"></div></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-secondary" type="button" onclick="resetQuery()">重置</button>
+            <button class="btn btn-primary" type="button" onclick="runQuery()">查询</button>
+          </div>
+        </div>
+
+        <!-- 19 列宽表 -->
+        <div class="table-toolbar">
+          <span class="t-title">查询结果 <span class="muted" id="listCount" style="font-size:14px;font-weight:400;">共 0 条（筛选后）</span></span>
+          <div class="t-actions">
+            <button class="btn btn-secondary btn-sm" type="button" onclick="openColumnConfig()">配置显示字段</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data" id="mainTable">
+            <colgroup id="mainCols">
+              <col class="c-idx"><col class="c-long"><col class="c-mid"><col class="c-code">
+              <col class="c-long"><col class="c-long"><col class="c-code"><col class="c-mid">
+              <col class="c-mid"><col class="c-short"><col class="c-long"><col class="c-code">
+              <col class="c-short"><col class="c-short"><col class="c-code"><col class="c-short">
+              <col class="c-date"><col class="c-status"><col class="c-ops">
+            </colgroup>
+            <thead>
+              <tr id="mainHead">
+                <th class="col-index">序号</th>
+                <th>客户名称</th>
+                <th>客户简称</th>
+                <th>合同编号</th>
+                <th>合同名称</th>
+                <th>项目名称</th>
+                <th>项目编号</th>
+                <th>风场名称</th>
+                <th>班组名称</th>
+                <th>班组性质</th>
+                <th>班组所属公司</th>
+                <th>外包合同编号</th>
+                <th>风机号</th>
+                <th>叶片号</th>
+                <th>完工报告编号</th>
+                <th>结算提交人</th>
+                <th>结算月份</th>
+                <th class="c-status">完工报告上传状态</th>
+                <th class="col-actions">操作栏</th>
+              </tr>
+            </thead>
+            <tbody id="mainTbody"></tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <span id="pg-info">共 0 条</span>
+          <select id="pg-size" onchange="changePageSize()"><option value="10">10 条/页</option><option value="15">15 条/页</option><option value="20">20 条/页</option></select>
+          <button class="pg-btn" id="pg-prev" type="button" onclick="goPage(-1)">上一页</button>
+          <span id="pg-cur">1 / 1</span>
+          <button class="pg-btn" id="pg-next" type="button" onclick="goPage(1)">下一页</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 上传信息表 -->
+  <dialog class="modal" id="uploadInfoModal" style="width:min(680px,calc(100vw - 32px));">
+    <div class="modal-head"><h3 class="modal-title">上传历史完工报告信息表</h3><button class="modal-close" type="button" data-close="uploadInfoModal" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <div class="dropzone" id="dzInfo"></div>
+      <input type="file" id="fileInfo" accept=".xlsx,.xls,.csv" hidden>
+      <div class="alt-file"><button class="link-btn" type="button" onclick="useSampleFile('info')">使用示例文件</button></div>
+      <div class="ur-state hide" id="infoProgress">
+        <div class="progress"><div class="progress-track"><div class="progress-bar info" id="infoProgBar" style="width:0%"></div></div><span class="progress-pct info" id="infoProgPct">0%</span></div>
+        <div class="ur-tip" id="infoProgTip">正在解析信息表…</div>
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" onclick="downloadTemplate()">下载模板</button>
+      <button class="btn btn-secondary" type="button" data-close="uploadInfoModal">取消</button>
+      <button class="btn btn-primary" type="button" id="btnParse" onclick="parseInfo()" disabled>开始解析</button>
+    </div>
+  </dialog>
+
+  <!-- 解析预览 -->
+  <dialog class="modal preview-modal" id="previewModal" style="width:min(1180px,calc(100vw - 48px));">
+    <div class="modal-head"><h3 class="modal-title">信息表解析预览</h3><button class="modal-close" type="button" data-close="previewModal" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <div class="verify-ok" id="previewOk"></div>
+      <div class="table-wrap">
+        <table class="data" id="previewTable">
+          <colgroup id="previewCols">
+            <col class="c-long"><col class="c-mid"><col class="c-code"><col class="c-long">
+            <col class="c-long"><col class="c-code"><col class="c-mid"><col class="c-mid">
+            <col class="c-short"><col class="c-long"><col class="c-code"><col class="c-short">
+            <col class="c-short"><col class="c-code"><col class="c-short"><col class="c-date">
+          </colgroup>
+          <thead><tr id="previewHead"></tr></thead>
+          <tbody id="previewTbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" onclick="backToUpload()">返回重传</button>
+      <button class="btn btn-primary" type="button" onclick="confirmImport()">确认导入</button>
+    </div>
+  </dialog>
+
+  <!-- 详情 -->
+  <dialog class="modal" id="detailModal" style="width:min(680px,calc(100vw - 32px));">
+    <div class="modal-head"><h3 class="modal-title">完工报告详情</h3><button class="modal-close" type="button" data-close="detailModal" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body" id="dBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" data-close="detailModal">关闭</button>
+      <button class="btn btn-secondary hide" type="button" id="dReupload" onclick="openUploadReportFromDetail()">重新上传</button>
+      <button class="btn btn-primary hide" type="button" id="dDownload" onclick="downloadFromDetail()">导出完工报告信息</button>
+    </div>
+  </dialog>
+
+  <!-- 编辑 -->
+  <dialog class="modal" id="editModal" style="width:min(760px,calc(100vw - 32px));">
+    <div class="modal-head"><h3 class="modal-title">编辑完工报告信息</h3><button class="modal-close" type="button" data-close="editModal" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <div class="form-grid" id="editGrid"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" data-close="editModal">取消</button>
+      <button class="btn btn-primary" type="button" onclick="saveEdit()">保存</button>
+    </div>
+  </dialog>
+
+  <!-- 配置显示字段 -->
+  <dialog class="modal" id="columnModal" style="width:min(560px,calc(100vw - 32px));">
+    <div class="modal-head"><h3 class="modal-title">配置显示字段</h3><button class="modal-close" type="button" data-close="columnModal" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <div class="col-cfg-top">
+        <span class="muted" id="colCfgCount">已显示 17 / 17 项</span>
+        <button class="link-btn" type="button" onclick="selectAllColumns()">全选</button>
+        <button class="link-btn" type="button" onclick="resetColumns()">恢复默认</button>
+      </div>
+      <div class="col-cfg-grid" id="columnGrid"></div>
+      <div class="col-cfg-fixed">固定列：序号、操作栏（不可隐藏）</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" onclick="cancelColumnConfig()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmColumnConfig()">完成</button>
+    </div>
+  </dialog>
+
+  <!-- 完工报告文件预览 -->
+  <dialog class="modal" id="filePreviewModal" style="width:min(960px,calc(100vw - 48px));">
+    <div class="modal-head"><h3 class="modal-title" id="fpTitle">完工报告文件预览</h3><button class="modal-close" type="button" data-close="filePreviewModal" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <div class="fp-meta" id="fpFileName"></div>
+      <div class="fp-stage" id="fpBody"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" data-close="filePreviewModal">关闭</button>
+      <button class="btn btn-primary" type="button" onclick="downloadFromPreview()">导出完工报告信息</button>
+    </div>
+  </dialog>
+
+  <!-- 上传完工报告 -->
+  <dialog class="modal" id="uploadReportModal" style="width:min(600px,calc(100vw - 32px));">
+    <div class="modal-head"><h3 class="modal-title">上传完工报告</h3><button class="modal-close" type="button" data-close="uploadReportModal" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <div class="ur-hint" id="urHint"></div>
+      <div class="dropzone" id="dzReport"></div>
+      <input type="file" id="fileReport" accept=".pdf,.jpg,.jpeg,.png,.zip" hidden>
+      <div class="alt-file"><button class="link-btn" type="button" onclick="useSampleFile('report')">使用示例文件</button></div>
+      <div class="ur-state hide" id="urProgress">
+        <div class="progress"><div class="progress-track"><div class="progress-bar info" id="urProgBar" style="width:0%"></div></div><span class="progress-pct info" id="urProgPct">0%</span></div>
+        <div class="ur-tip" id="urTip">上传中…</div>
+      </div>
+      <div class="verify-ok hide" id="urSuccess"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>上传成功</div>
+      <div class="verify-miss hide" id="urFail"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" data-close="uploadReportModal">取消</button>
+      <button class="btn btn-secondary hide" type="button" id="urRetry" onclick="retryUpload()">重试</button>
+      <button class="btn btn-primary" type="button" id="urConfirm" onclick="startUpload()" disabled>确认上传</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ============================================================
+   完工报告导入 · 页面交互
+   内存态数据，无外部依赖
+   ============================================================ */
+'use strict';
+
+/* ---------- 通用工具 ---------- */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function nowStr(){
+  var d=new Date();
+  function p(n){ return String(n).padStart(2,'0'); }
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+function sizeStr(n){
+  if(n==null) return '—';
+  if(n>=1024*1024) return (n/1024/1024).toFixed(1)+' MB';
+  if(n>=1024) return (n/1024).toFixed(1)+' KB';
+  return n+' B';
+}
+function fileType(name){
+  var ext=String(name).toLowerCase().split('.').pop();
+  var map={pdf:'PDF 文档',zip:'ZIP 压缩包',jpg:'JPEG 图片',jpeg:'JPEG 图片',png:'PNG 图片',xlsx:'Excel 工作簿',xls:'Excel 工作表',csv:'CSV 表格'};
+  return map[ext]||ext.toUpperCase()+' 文件';
+}
+
+/* 内联 SVG 图标 */
+var ICO={
+  search:'<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  bell:'<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+  file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/>',
+  grid:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>',
+  eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  edit:'<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+  close:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  check:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+  alert:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+  refresh:'<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>',
+  filter:'<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
+  inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+  arrow:'<polyline points="9 18 15 12 9 6"/>',
+  calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'
+};
+function icon(name,size){
+  var s=size||16;
+  return '<svg viewBox="0 0 24 24" width="'+s+'" height="'+s+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICO[name]+'</svg>';
+}
+
+/* ---------- Toast ---------- */
+var toastTimer=null;
+function showToast(msg){
+  var t=$('toast'); t.textContent=msg; t.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){ t.classList.remove('show'); },2400);
+}
+
+/* ---------- 16 字段定义（顺序即模板列序） ---------- */
+var FIELDS=[
+  {key:'customer',     label:'客户名称',     cls:'c-long',  mono:false, req:true},
+  {key:'customerShort',label:'客户简称',     cls:'c-mid',   mono:false, req:false},
+  {key:'contractNo',   label:'合同编号',     cls:'c-code',  mono:true,  req:true},
+  {key:'contractName', label:'合同名称',     cls:'c-long',  mono:false, req:false},
+  {key:'projectName',  label:'项目名称',     cls:'c-long',  mono:false, req:true},
+  {key:'projectNo',    label:'项目编号',     cls:'c-code',  mono:true,  req:true},
+  {key:'windFarm',     label:'风场名称',     cls:'c-mid',   mono:false, req:false},
+  {key:'teamName',     label:'班组名称',     cls:'c-mid',   mono:false, req:false},
+  {key:'teamNature',   label:'班组性质',     cls:'c-short', mono:false, req:false},
+  {key:'teamCompany',  label:'班组所属公司', cls:'c-long',  mono:false, req:false},
+  {key:'outsourceNo',  label:'外包合同编号', cls:'c-code',  mono:true,  req:false},
+  {key:'turbine',      label:'风机号',       cls:'c-short', mono:true,  req:false},
+  {key:'blade',        label:'叶片号',       cls:'c-short', mono:true,  req:false},
+  {key:'reportNo',     label:'完工报告编号', cls:'c-code',  mono:true,  req:true},
+  {key:'submitter',    label:'结算提交人',   cls:'c-short', mono:false, req:true},
+  {key:'month',        label:'结算月份',     cls:'c-date',  mono:true,  req:true}
+];
+var MONO_KEYS={contractNo:1,projectNo:1,outsourceNo:1,turbine:1,blade:1,reportNo:1,month:1};
+
+function mk(customer,customerShort,contractNo,contractName,projectName,projectNo,windFarm,teamName,teamNature,teamCompany,outsourceNo,turbine,blade,reportNo,submitter,month,status,file){
+  return {customer:customer,customerShort:customerShort,contractNo:contractNo,contractName:contractName,
+    projectName:projectName,projectNo:projectNo,windFarm:windFarm,teamName:teamName,teamNature:teamNature,teamCompany:teamCompany,
+    outsourceNo:outsourceNo,turbine:turbine,blade:blade,reportNo:reportNo,submitter:submitter,month:month,
+    status:status||'未上传',file:file||null};
+}
+
+
+/* ---------- 导入台账数据 ---------- */
+var PREVIEW_DATA=[
+  mk('华能新能源股份有限公司','华能新能源','XS-2026-0001','张北风电场 2026 年度叶片巡检与维修服务合同','张北风电场叶片定期巡检项目','XM-2026-0001','张北风电场','瑞风一班','自有','驭眼科技（北京）运维分公司','—','F03','B01','WG-2026-0001','张建国','2026-01','未上传',null),
+  mk('华能新能源股份有限公司','华能新能源','XS-2026-0002','乌兰察布风电场齿轮箱检修服务合同','乌兰察布风电场齿轮箱专项检修项目','XM-2026-0002','乌兰察布风电场','戈壁二班','外包','内蒙古风运维保有限公司','WB-2026-0002','F07','B03','WG-2026-0002','王敏','2026-01','未上传',null),
+  mk('国家电投集团风电有限公司','国家电投','XS-2026-0003','酒泉风电基地 2026 年全场定检服务合同','酒泉风电基地年度定检项目','XM-2026-0003','酒泉风电基地','北辰三班','自有','驭眼科技（甘肃）运维分公司','—','F12','B02','WG-2026-0003','李伟','2026-02','未上传',null),
+  mk('大唐国际发电股份有限公司','大唐国际','XS-2026-0004','达坂城风电场主轴更换施工合同','达坂城风电场主轴更换项目','XM-2026-0004','达坂城风电场','高原检修班','外包','新疆瑞风检修服务有限公司','WB-2026-0004','F21','B01','WG-2026-0004','赵强','2026-02','未上传',null),
+  mk('龙源电力集团股份有限公司','龙源电力','XS-2026-0005','如东海上风电场塔筒防腐服务合同','如东海上风电场塔筒防腐项目','XM-2026-0005','如东海上风电场','东海运维班','自有','驭眼科技（江苏）运维分公司','—','F05','B03','WG-2026-0005','周涛','2026-03','未上传',null),
+  mk('华润电力控股有限公司','华润电力','XS-2026-0006','辉腾锡勒风电场叶片维修服务合同','辉腾锡勒风电场叶片维修项目','XM-2026-0006','辉腾锡勒风电场','塞北巡检班','外包','内蒙古北辰运维服务有限公司','WB-2026-0006','F09','B02','WG-2026-0006','陈静','2026-03','未上传',null),
+  mk('中国广核集团有限公司','中广核','XS-2026-0007','玉门风电场半年定检服务合同','玉门风电场半年定检项目','XM-2026-0007','玉门风电场','戈壁二班','外包','甘肃瑞风检修服务有限公司','WB-2026-0007','F16','B01','WG-2026-0007','刘洋','2026-03','未上传',null),
+  mk('三峡新能源（集团）股份有限公司','三峡能源','XS-2026-0008','承德风电场变频器改造服务合同','承德风电场变频器改造项目','XM-2026-0008','承德风电场','瑞风一班','自有','驭眼科技（北京）运维分公司','—','F11','B03','WG-2026-0008','孙磊','2026-04','未上传',null),
+  mk('北京京能清洁能源电力股份有限公司','京能清洁能源','XS-2026-0009','张北风电场二期偏航系统检修合同','张北风电场二期偏航系统检修项目','XM-2026-0009','张北风电场','北辰三班','外包','河北塞北电力服务有限公司','WB-2026-0009','F28','B02','WG-2026-0009','吴芳','2026-04','未上传',null),
+  mk('华能新能源股份有限公司','华能新能源','XS-2026-0010','乌兰察布风电场年度叶片巡检合同','乌兰察布风电场年度叶片巡检项目','XM-2026-0010','乌兰察布风电场','塞北巡检班','外包','内蒙古风运维保有限公司','WB-2026-0010','F33','B01','WG-2026-0010','郑斌','2026-05','未上传',null),
+  mk('国家电投集团风电有限公司','国家电投','XS-2026-0011','酒泉风电基地塔筒清洗服务合同','酒泉风电基地塔筒清洗项目','XM-2026-0011','酒泉风电基地','高原检修班','外包','甘肃瑞风检修服务有限公司','WB-2026-0011','F04','B03','WG-2026-0011','张建国','2026-05','未上传',null),
+  mk('龙源电力集团股份有限公司','龙源电力','XS-2026-0012','如东海上风电场年度定检服务合同','如东海上风电场年度定检项目','XM-2026-0012','如东海上风电场','东海运维班','自有','驭眼科技（江苏）运维分公司','—','F08','B02','WG-2026-0012','王敏','2026-06','未上传',null)
+];
+
+/* ---------- 校验错误明细 ---------- */
+/* 列号由 FIELDS 顺序派生，避免新增字段后错位（16 列对应 A–P） */
+function colLetter(key){
+  var i=-1;
+  FIELDS.forEach(function(f,idx){ if(f.key===key) i=idx; });
+  return i<0?'—':String.fromCharCode(65+i);
+}
+var ERROR_ROWS=[
+  {row:3,key:'customerShort',col:colLetter('customerShort'),field:'客户简称',type:'数据缺失',value:'（空）'},
+  {row:5,key:'reportNo',col:colLetter('reportNo'),field:'完工报告编号',type:'编号重复',value:'WG-2026-0003'},
+  {row:7,key:'month',col:colLetter('month'),field:'结算月份',type:'格式错误',value:'2026/03'},
+  {row:9,key:'customer',col:colLetter('customer'),field:'客户名称',type:'必填为空',value:'（空）'},
+  {row:11,key:'outsourceNo',col:colLetter('outsourceNo'),field:'外包合同编号',type:'格式错误',value:'WB20260007'}
+];
+
+/* ---------- 内存态 ---------- */
+var REPORTS=[];
+var page=1, pageSize=10;
+var Q={customer:'',contract:'',project:'',projectNo:'',farm:'',team:'',report:'',month:'',status:'',key:''};
+var selectedId=null;
+var currentDetailId=null;
+var currentEditId=null;
+var currentUploadId=null;
+var infoFile=null;      /* {name,size} */
+var reportFile=null;    /* {name,size} */
+var uploadingId=null;   /* 上传中瞬态行（仅用于禁用按钮，不落库、不计入统计） */
+var uploadTimer=null;
+var parseTimer=null;
+var highlightTimer=null;
+var currentPreviewId=null;
+
+/* ---------- 自定义显示字段状态 ---------- */
+var COL_W={'c-idx':48,'c-long':150,'c-mid':120,'c-code':126,'c-short':80,'c-date':92,'c-status':160,'c-ops':168};
+function defaultColCfg(){ var o={}; FIELDS.forEach(function(f){ o[f.key]=true; }); o.__status=true; return o; }
+var COL_CFG=defaultColCfg();
+var COL_SNAPSHOT=null;
+var MAIN_COL_COUNT=19;
+function colItems(){ return FIELDS.concat([{key:'__status',label:'完工报告上传状态'}]); }
+function colCount(){ var n=0; colItems().forEach(function(f){ if(COL_CFG[f.key]) n++; }); return n; }
+function visibleFields(){ return FIELDS.filter(function(f){ return COL_CFG[f.key]!==false; }); }
+
+/* 按可见列重建列组 / 表头，并同步宽表总宽 */
+function renderTableHead(){
+  var tbl=$('mainTable'), cols=[], heads=[], w=0;
+  cols.push('c-idx'); heads.push('<th class="col-index">序号</th>'); w+=COL_W['c-idx'];
+  visibleFields().forEach(function(f){
+    cols.push(f.cls); heads.push('<th>'+esc(f.label)+'</th>'); w+=COL_W[f.cls];
+  });
+  if(COL_CFG.__status!==false){ cols.push('c-status'); heads.push('<th class="c-status">完工报告上传状态</th>'); w+=COL_W['c-status']; }
+  cols.push('c-ops'); heads.push('<th class="col-actions">操作栏</th>'); w+=COL_W['c-ops'];
+  tbl.querySelector('colgroup').innerHTML=cols.map(function(c){ return '<col class="'+c+'">'; }).join('');
+  tbl.querySelector('thead tr').innerHTML=heads.join('');
+  MAIN_COL_COUNT=heads.length;
+  document.documentElement.style.setProperty('--tbl-min-w',(w+14)+'px');
+}
+function renderPreviewHead(){
+  var w=0;
+  $('previewTable').querySelector('colgroup').innerHTML=FIELDS.map(function(f){ w+=COL_W[f.cls]; return '<col class="'+f.cls+'">'; }).join('');
+  $('previewHead').innerHTML=FIELDS.map(function(f){ return '<th>'+esc(f.label)+'</th>'; }).join('');
+  document.documentElement.style.setProperty('--tbl-preview-w',(w+24)+'px');
+}
+function renderColumnConfig(){
+  $('columnGrid').innerHTML=colItems().map(function(f){
+    return '<label class="col-cfg-item"><input type="checkbox" data-col="'+esc(f.key)+'"'+(COL_CFG[f.key]?' checked':'')+'><span>'+esc(f.label)+'</span></label>';
+  }).join('');
+  $('colCfgCount').textContent='已显示 '+colCount()+' / '+colItems().length+' 项';
+}
+function applyColCfg(){ renderColumnConfig(); renderTableHead(); render(); }
+function openColumnConfig(){
+  COL_SNAPSHOT=clone(COL_CFG); renderColumnConfig(); $('columnModal').showModal();
+  var first=$('columnGrid').querySelector('input'); if(first) first.focus();
+}
+function onColumnChange(ev){
+  var cb=ev.target.closest('input[data-col]'); if(!cb) return;
+  var k=cb.getAttribute('data-col');
+  if(!cb.checked && colCount()<=1){ cb.checked=true; showToast('至少保留一列'); return; }
+  COL_CFG[k]=cb.checked;
+  $('colCfgCount').textContent='已显示 '+colCount()+' / '+colItems().length+' 项';
+  renderTableHead(); render();
+}
+function selectAllColumns(){ colItems().forEach(function(f){ COL_CFG[f.key]=true; }); applyColCfg(); }
+function resetColumns(){ COL_CFG=defaultColCfg(); applyColCfg(); showToast('已恢复默认显示字段'); }
+function cancelColumnConfig(){ if(COL_SNAPSHOT) COL_CFG=COL_SNAPSHOT; COL_SNAPSHOT=null; $('columnModal').close(); renderTableHead(); render(); }
+function confirmColumnConfig(){ COL_SNAPSHOT=null; $('columnModal').close(); showToast('显示字段已更新'); }
+
+function byId(id){ for(var i=0;i<REPORTS.length;i++){ if(REPORTS[i].reportNo===id) return REPORTS[i]; } return null; }
+function tag(status){
+  var c=status==='已上传'?'tag-green':'tag-warn';
+  return '<span class="tag '+c+'">'+esc(status)+'</span>';
+}
+
+/* ---------- 视图切换 ---------- */
+function showView(v){
+  $('viewList').classList.toggle('hide',v!=='list');
+  $('viewVerifyFail').classList.toggle('hide',v!=='fail');
+}
+function closeVerifyFail(){ showView('list'); }
+
+/* ---------- 筛选 ---------- */
+function filtered(){
+  return REPORTS.filter(function(r){
+    if(Q.customer && (r.customer+' '+r.customerShort).toLowerCase().indexOf(Q.customer.toLowerCase())<0) return false;
+    if(Q.contract && r.contractNo.toLowerCase().indexOf(Q.contract.toLowerCase())<0) return false;
+    if(Q.project && r.projectName.toLowerCase().indexOf(Q.project.toLowerCase())<0) return false;
+    if(Q.projectNo && String(r.projectNo||'').toLowerCase().indexOf(Q.projectNo.toLowerCase())<0) return false;
+    if(Q.farm && r.windFarm.toLowerCase().indexOf(Q.farm.toLowerCase())<0) return false;
+    if(Q.team && r.teamName.toLowerCase().indexOf(Q.team.toLowerCase())<0) return false;
+    if(Q.report && r.reportNo.toLowerCase().indexOf(Q.report.toLowerCase())<0) return false;
+    if(Q.month && r.month!==Q.month) return false;
+    if(Q.status && r.status!==Q.status) return false;
+    if(Q.key){
+      var k=Q.key.toLowerCase();
+      var hay=[r.customer,r.customerShort,r.contractNo,r.contractName,r.projectName,r.projectNo,r.windFarm,r.teamName,r.teamCompany,r.outsourceNo,r.reportNo,r.submitter].join(' ').toLowerCase();
+      if(hay.indexOf(k)<0) return false;
+    }
+    return true;
+  });
+}
+function runQuery(){
+  Q.customer=$('q-customer').value.trim(); Q.contract=$('q-contract').value.trim();
+  Q.project=$('q-project').value.trim(); Q.projectNo=$('q-projectNo').value.trim(); Q.farm=$('q-farm').value.trim();
+  Q.team=$('q-team').value.trim(); Q.report=$('q-report').value.trim();
+  Q.month=$('q-month').value; Q.status=$('q-status').value; Q.key=$('q-key').value.trim();
+  page=1; render();
+  showToast('共 '+filtered().length+' 条');
+}
+function resetQuery(){
+  ['q-customer','q-contract','q-project','q-projectNo','q-farm','q-team','q-report','q-month','q-status','q-key'].forEach(function(id){ $(id).value=''; });
+  Q={customer:'',contract:'',project:'',projectNo:'',farm:'',team:'',report:'',month:'',status:'',key:''};
+  page=1; render();
+  showToast('已重置');
+}
+function clearFilter(){ resetQuery(); }
+
+/* ---------- 统计条 ---------- */
+function renderSummary(){
+  var total=REPORTS.length, done=0;
+  REPORTS.forEach(function(r){ if(r.status==='已上传') done++; });
+  var todo=total-done;
+  var pct=total?Math.round(done/total*100):0;
+  $('sumTotal').textContent=total;
+  $('sumDone').textContent=done;
+  $('sumTodo').textContent=todo;
+  $('progBar').style.width=pct+'%';
+  $('progPct').textContent=pct+'%';
+  $('progTrack').setAttribute('aria-valuenow',pct);
+}
+
+/* ---------- 台账宽表渲染 ---------- */
+function opsHtml(r){
+  var id=esc(r.reportNo);
+  /* 上传中禁用整行操作 */
+  var dis=(uploadingId===r.reportNo)?' disabled':'';
+  /* 已上传行操作栏提供「下载」入口：直接下载已上传的完工报告文件；预览改由详情内文件名链接触发 */
+  var third=r.status==='已上传'
+    ? '<button class="btn btn-ghost btn-sm" type="button" data-act="download" data-id="'+id+'"'+dis+' title="下载完工报告文件">下载</button>'
+    : '<button class="btn btn-ghost btn-sm" type="button" data-act="upload" data-id="'+id+'"'+dis+'>上传</button>';
+  return '<div class="actions">'
+    + '<button class="btn btn-ghost btn-sm" type="button" data-act="edit" data-id="'+id+'"'+dis+'>编辑</button>'
+    + '<button class="btn btn-ghost btn-sm" type="button" data-act="view" data-id="'+id+'"'+dis+'>查看</button>'
+    + third + '</div>';
+}
+function cellHtml(r,f){
+  var v=r[f.key];
+  var cls=(MONO_KEYS[f.key]?'mono ':'')+'clip';
+  if(f.key==='reportNo' && r.status==='已上传' && r.file){
+    return '<td class="'+cls+'" title="点击预览完工报告 · '+esc(v)+'"><button type="button" class="num-link mono" data-act="preview" data-id="'+esc(r.reportNo)+'">'+esc(v)+'</button></td>';
+  }
+  var muted=(v==='—')?'<span class="muted">—</span>':esc(v);
+  return '<td class="'+cls+'" title="'+esc(v)+'">'+muted+'</td>';
+}
+function renderRows(list,start){
+  var tb=$('mainTbody');
+  if(!list.length){
+    var noData=(REPORTS.length===0);
+    tb.innerHTML='<tr><td colspan="'+MAIN_COL_COUNT+'" class="empty-hint">'
+      +'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 0;">'
+      +icon('inbox',32)
+      +'<span>'+(noData?'暂无数据':'无匹配记录')+'</span>'
+      +(noData?'':'<button class="btn btn-ghost btn-sm" type="button" onclick="clearFilter()">清除筛选</button>')
+      +'</div></td></tr>';
+    return;
+  }
+  var vf=visibleFields();
+  var showStatus=(COL_CFG.__status!==false);
+  tb.innerHTML=list.map(function(r,i){
+    var sel=(selectedId===r.reportNo)?' row-selected':'';
+    return '<tr data-id="'+esc(r.reportNo)+'" class="'+sel.trim()+'">'
+      +'<td class="col-index num">'+(start+i+1)+'</td>'
+      +vf.map(function(f){ return cellHtml(r,f); }).join('')
+      +(showStatus?'<td>'+tag(r.status)+'</td>':'')
+      +'<td class="col-actions">'+opsHtml(r)+'</td>'
+      +'</tr>';
+  }).join('');
+}
+function renderPager(total){
+  var pages=Math.max(1,Math.ceil(total/pageSize));
+  if(page>pages) page=pages;
+  $('pg-info').textContent='共 '+total+' 条';
+  $('pg-cur').textContent=page+' / '+pages;
+  $('pg-prev').disabled=page<=1;
+  $('pg-next').disabled=page>=pages;
+}
+function render(){
+  renderSummary();
+  var list=filtered(), total=list.length;
+  var pages=Math.max(1,Math.ceil(total/pageSize));
+  if(page>pages) page=pages;
+  var start=(page-1)*pageSize;
+  renderRows(list.slice(start,start+pageSize),start);
+  renderPager(total);
+  var cnt='共 '+total+' 条'+(REPORTS.length!==total?'（筛选后）':'');
+  $('resultCount').textContent=cnt;
+  $('listCount').textContent='共 '+total+' 条（筛选后）';
+}
+function goPage(d){ page+=d; render(); }
+function changePageSize(){ pageSize=parseInt($('pg-size').value,10)||10; page=1; render(); }
+function toggleSelect(id){ selectedId=(selectedId===id)?null:id; render(); }
+/* 列表定位：导入后从首列开始，保证业务主键列可见 */
+function resetTableScroll(){
+  setTimeout(function(){
+    var w=document.querySelector('#viewList .table-wrap');
+    if(w) w.scrollLeft=0;
+  },0);
+}
+
+/* ---------- 新增行高亮 ---------- */
+function highlightRows(ids){
+  if(highlightTimer) clearTimeout(highlightTimer);
+  var set={}; ids.forEach(function(x){ set[x]=1; });
+  Array.prototype.forEach.call($('mainTbody').querySelectorAll('tr[data-id]'),function(tr){
+    if(set[tr.getAttribute('data-id')]) tr.classList.add('just-added');
+  });
+  highlightTimer=setTimeout(function(){
+    Array.prototype.forEach.call(document.querySelectorAll('#mainTable tbody tr.just-added'),function(tr){ tr.classList.remove('just-added'); });
+  },1800);
+}
+
+/* ---------- 文件下载 ---------- */
+function downloadBlob(content,filename,mime){
+  var blob=new Blob([content],{type:mime||'text/plain;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },2000);
+}
+function csvCell(v){ v=String(v==null?'':v); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+
+/* 下载信息表模板 */
+function downloadTemplate(){
+  var header=FIELDS.map(function(f){ return f.label; });
+  /* 模板首列表头标注全称 */
+  header[0]='客户名称（全称）';
+  var sample=PREVIEW_DATA[0];
+  var row=FIELDS.map(function(f){ return sample[f.key]; });
+  var lines=[header.map(csvCell).join(','),row.map(csvCell).join(',')];
+  downloadBlob('\ufeff'+lines.join('\r\n'),'完工报告导入模板.csv','text/csv;charset=utf-8');
+  showToast('模板已下载');
+}
+
+/* 完工报告下载 */
+function downloadReportFile(r){
+  if(!r || r.status!=='已上传' || !r.file){
+    showToast('尚未上传完工报告');
+    return;
+  }
+  var f=r.file;
+  var lines=[];
+  lines.push('完工报告文件信息');
+  lines.push('导出时间：'+nowStr());
+  lines.push('');
+  lines.push('【文件信息】');
+  lines.push('文件名,'+csvCell(f.name));
+  lines.push('文件大小,'+csvCell(f.size));
+  lines.push('文件类型,'+csvCell(f.type));
+  lines.push('上传时间,'+csvCell(f.uploadAt));
+  lines.push('上传人,'+csvCell(f.uploadBy));
+  lines.push('');
+  lines.push('【完工报告台账信息】');
+  lines.push(FIELDS.map(function(x){return csvCell(x.label);}).join(',')+',完工报告上传状态');
+  lines.push(FIELDS.map(function(x){return csvCell(r[x.key]);}).join(',')+','+csvCell(r.status));
+  downloadBlob('\ufeff'+lines.join('\r\n'),r.reportNo+'_完工报告信息.csv','text/csv;charset=utf-8');
+  showToast('已开始下载');
+}
+function downloadReport(id){ downloadReportFile(byId(id)); }
+/* 操作栏「下载」：下载已上传的完工报告原文件（PDF / 图片 / ZIP 均可）；ZIP 无预览但可下载 */
+function downloadUploadedFile(id){
+  var r=byId(id);
+  if(!r || r.status!=='已上传' || !r.file){ showToast('尚未上传完工报告'); return; }
+  var url=null;
+  if(r.file.raw) url=URL.createObjectURL(r.file.raw);
+  else if(r.file.previewUrl) url=r.file.previewUrl;
+  if(!url){ showToast('文件暂不可下载'); return; }
+  var a=document.createElement('a'); a.href=url; a.download=r.file.name;
+  document.body.appendChild(a); a.click(); a.remove();
+  if(r.file.raw) URL.revokeObjectURL(url);
+  showToast('已开始下载');
+}
+function downloadFromDetail(){
+  var r=byId(currentDetailId);
+  downloadReportFile(r);
+  if(r && r.status==='已上传') $('detailModal').close();
+}
+function downloadErrorDetail(){
+  var lines=['行号,列号,字段,错误类型,原值'];
+  ERROR_ROWS.forEach(function(e){ lines.push([e.row,e.col,e.field,e.type,e.value].map(csvCell).join(',')); });
+  downloadBlob('\ufeff'+lines.join('\r\n'),'完工报告导入_错误明细.csv','text/csv;charset=utf-8');
+  showToast('错误明细已下载');
+}
+
+/* ---------- 上传信息表 ---------- */
+function resetDropzone(kind){
+  var dz=kind==='info'?$('dzInfo'):$('dzReport');
+  var input=kind==='info'?$('fileInfo'):$('fileReport');
+  var isInfo=kind==='info';
+  dz.className='dropzone';
+  dz.innerHTML=icon('upload',32).replace('<svg ','<svg class="dz-icon" ')
+    +'<div>拖拽文件到此处，或点击选择</div>'
+    +'<div class="dz-meta">支持 '+(isInfo?'.xlsx / .xls / .csv':'PDF / 图片 / ZIP')+'</div>';
+  input.value='';
+  if(isInfo){ infoFile=null; $('btnParse').disabled=true; $('infoProgress').classList.add('hide'); }
+  else{ reportFile=null; $('urConfirm').disabled=true; $('urProgress').classList.add('hide'); $('urSuccess').classList.add('hide'); $('urFail').classList.add('hide'); $('urRetry').classList.add('hide'); $('urConfirm').classList.remove('hide'); }
+}
+function setDropzoneFile(kind,f){
+  var dz=kind==='info'?$('dzInfo'):$('dzReport');
+  var isInfo=kind==='info';
+  var ok=isInfo||/\.(pdf|jpe?g|png|zip)$/i.test(f.name);
+  if(!ok){
+    dz.className='dropzone has-error';
+    dz.innerHTML=icon('alert',32).replace('<svg ','<svg class="dz-icon" ')
+      +'<div><b>文件类型不支持：'+esc(f.name)+'</b></div>'
+      +'<div class="dz-meta">仅支持 PDF / 图片 / ZIP，请重新选择</div>';
+    reportFile=null; $('urConfirm').disabled=true;
+    showToast('文件类型不支持');
+    return;
+  }
+  dz.className='dropzone has-file';
+  dz.innerHTML=icon('file',32).replace('<svg ','<svg class="dz-icon" ')
+    +'<div class="dz-file">'+esc(f.name)+'</div>'
+    +'<div class="dz-meta">文件大小：'+esc(f.sizeStr||sizeStr(f.size))+' · 类型：'+esc(fileType(f.name))+'</div>'
+    +'<div class="dz-meta" style="margin-top:6px;"><button class="link-btn" type="button" data-repick="1">重新选择</button></div>';
+  if(isInfo){ infoFile={name:f.name,size:f.sizeStr||sizeStr(f.size)}; $('btnParse').disabled=false; }
+  else{
+    reportFile={name:f.name,size:f.sizeStr||sizeStr(f.size),type:fileType(f.name)};
+    if(f.raw) reportFile.raw=f.raw;
+    if(f.previewUrl) reportFile.previewUrl=f.previewUrl;
+    $('urConfirm').disabled=false;
+  }
+  showToast('已选择文件');
+}
+function useSampleFile(kind){
+  if(kind==='info') setDropzoneFile('info',{name:'完工报告导入信息表_2026Q1.xlsx',size:'36.8 KB',sizeStr:'36.8 KB'});
+  else{
+    var r=byId(currentUploadId);
+    setDropzoneFile('report',{name:(r?r.reportNo:'WG-2026-0002')+'_完工报告.png',size:'1.6 MB',sizeStr:'1.6 MB',previewUrl:makeSamplePreview(r)});
+  }
+}
+function bindDropzone(kind){
+  var dz=kind==='info'?$('dzInfo'):$('dzReport');
+  var input=kind==='info'?$('fileInfo'):$('fileReport');
+  dz.addEventListener('click',function(ev){
+    if(ev.target.closest('[data-repick]')){ input.click(); return; }
+    input.click();
+  });
+  dz.addEventListener('dragover',function(ev){ ev.preventDefault(); dz.classList.add('is-dragover'); });
+  dz.addEventListener('dragleave',function(ev){ ev.preventDefault(); dz.classList.remove('is-dragover'); });
+  dz.addEventListener('drop',function(ev){
+    ev.preventDefault(); dz.classList.remove('is-dragover');
+    if(ev.dataTransfer.files && ev.dataTransfer.files.length){
+      var f=ev.dataTransfer.files[0];
+      setDropzoneFile(kind,{name:f.name,size:f.size,raw:f});
+    }
+  });
+  input.addEventListener('change',function(){
+    if(input.files && input.files.length){
+      var f=input.files[0];
+      setDropzoneFile(kind,{name:f.name,size:f.size,raw:f});
+    }
+  });
+}
+function openUploadInfo(){
+  if($('detailModal').open) $('detailModal').close();
+  resetDropzone('info');
+  $('uploadInfoModal').showModal();
+}
+function runProgress(barId,pctId,tipId,tip,done){
+  var pct=0;
+  $(barId).style.width='0%'; $(pctId).textContent='0%';
+  if(tipId) $(tipId).textContent=tip;
+  var timer=setInterval(function(){
+    pct+=10;
+    $(barId).style.width=pct+'%'; $(pctId).textContent=pct+'%';
+    if(pct>=100){ clearInterval(timer); setTimeout(done,180); }
+  },90);
+  return timer;
+}
+function parseInfo(){
+  if(!infoFile){ showToast('请先选择文件'); return; }
+  $('btnParse').disabled=true;
+  $('infoProgress').classList.remove('hide');
+  parseTimer=runProgress('infoProgBar','infoProgPct','infoProgTip','正在解析信息表…',function(){
+    $('infoProgress').classList.add('hide');
+    $('uploadInfoModal').close();
+    var name=infoFile.name;
+    var badType=!/\.(xlsx|xls|csv)$/i.test(name);
+    var badName=/错误|error|invalid|测试错误/i.test(name);
+    if(badType||badName){
+      $('vfFileName').textContent=name;
+      renderErrTable();
+      showView('fail');
+      showToast('校验未通过');
+    }else{
+      openPreview();
+    }
+  });
+}
+function reuploadInfo(){ closeVerifyFail(); openUploadInfo(); }
+function renderErrTable(){
+  $('errTbody').innerHTML=ERROR_ROWS.map(function(e){
+    return '<tr><td class="num">'+e.row+'</td><td class="mono">'+esc(e.col)+'</td><td>'+esc(e.field)+'</td>'
+      +'<td><span class="tag tag-red">'+esc(e.type)+'</span></td><td class="clip" title="'+esc(e.value)+'">'+esc(e.value)+'</td></tr>';
+  }).join('');
+}
+
+/* ---------- 解析预览 ---------- */
+function openPreview(){
+  $('previewOk').innerHTML=icon('check',16).replace('<svg ','<svg style="vertical-align:-3px;margin-right:6px;" ')
+    +'共解析 '+PREVIEW_DATA.length+' 条，校验通过';
+  renderPreviewHead();
+  $('previewTbody').innerHTML=PREVIEW_DATA.map(function(r){
+    return '<tr>'+FIELDS.map(function(f){
+      var v=r[f.key];
+      var cls=(MONO_KEYS[f.key]?'mono ':'')+'clip';
+      var inner=(v==='—')?'<span class="muted">—</span>':esc(v);
+      return '<td class="'+cls+'" title="'+esc(v)+'">'+inner+'</td>';
+    }).join('')+'</tr>';
+  }).join('');
+  $('previewModal').showModal();
+}
+function backToUpload(){ $('previewModal').close(); openUploadInfo(); }
+function confirmImport(){
+  var existing={}, added=[];
+  REPORTS.forEach(function(r){ existing[r.reportNo]=1; });
+  PREVIEW_DATA.forEach(function(r){
+    if(!existing[r.reportNo]){ var rec=clone(r); rec.status='未上传'; rec.file=null; REPORTS.push(rec); existing[r.reportNo]=1; added.push(r.reportNo); }
+  });
+  selectedId=null; page=1;
+  $('previewModal').close();
+  showView('list');
+  render();
+  resetTableScroll();
+  if(added.length) highlightRows(added);
+  showToast(added.length?('已导入 '+added.length+' 条'):'信息表已导入，无新增记录');
+}
+
+/* ---------- 完工报告文件预览 ---------- */
+function previewKind(name){
+  var ext=String(name||'').toLowerCase().split('.').pop();
+  if(/^(png|jpe?g)$/.test(ext)) return 'image';
+  if(ext==='pdf') return 'pdf';
+  return 'none';
+}
+function previewHtml(f){
+  var k=f.kind||previewKind(f.name);
+  var note='<div class="fp-unsupported">'+icon('file',36)
+    +'<div>'+esc(f.type||'该文件')+' 暂不支持在线预览，请在弹窗底部导出完工报告信息。</div></div>';
+  if(!f.previewUrl) return note;
+  if(k==='image') return '<img class="fp-img" src="'+esc(f.previewUrl)+'" alt="完工报告预览">';
+  if(k==='pdf') return '<iframe class="fp-frame" src="'+esc(f.previewUrl)+'" title="完工报告预览"></iframe>';
+  return note;
+}
+/* 示例文件生成一份真实可渲染的报告图片，保证评审时预览可见 */
+function makeSamplePreview(r){
+  var c=document.createElement('canvas'); c.width=760; c.height=1000;
+  var x=c.getContext('2d'); if(!x) return null;
+  var F='-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+  x.fillStyle='#FFFFFF'; x.fillRect(0,0,760,1000);
+  x.strokeStyle='#E2E8F0'; x.lineWidth=2; x.strokeRect(28,28,704,944);
+  x.textAlign='center';
+  x.fillStyle='#0E7490'; x.font='bold 34px '+F; x.fillText('完工报告',380,112);
+  x.fillStyle='#94A3B8'; x.font='14px '+F; x.fillText('COMPLETION REPORT',380,140);
+  x.strokeStyle='#CBD5E1'; x.lineWidth=1; x.beginPath(); x.moveTo(80,170); x.lineTo(680,170); x.stroke();
+  var rows=[
+    ['完工报告编号',r?r.reportNo:'—'],
+    ['项目编号',r?r.projectNo:'—'],
+    ['项目名称',r?r.projectName:'—'],
+    ['客户名称',r?r.customer:'—'],
+    ['合同编号',r?r.contractNo:'—'],
+    ['风场名称',r?r.windFarm:'—'],
+    ['风机号 / 叶片号',r?(r.turbine+' / '+r.blade):'—'],
+    ['班组名称',r?r.teamName:'—'],
+    ['结算月份',r?r.month:'—'],
+    ['结算提交人',r?r.submitter:'—']
+  ];
+  var y=232;
+  x.textAlign='left';
+  rows.forEach(function(p){
+    x.fillStyle='#64748B'; x.font='15px '+F; x.fillText(p[0],90,y);
+    x.fillStyle='#0F172A'; x.font='16px '+F;
+    var t=String(p[1]); if(t.length>26) t=t.slice(0,25)+'…';
+    x.fillText(t,275,y);
+    y+=54;
+  });
+  x.strokeStyle='#E2E8F0'; x.beginPath(); x.moveTo(80,y+8); x.lineTo(680,y+8); x.stroke();
+  x.fillStyle='#94A3B8'; x.font='13px '+F;
+  x.fillText('归档状态：已归档',90,y+46);
+  x.fillText('归档月份：'+(r?r.month:'—'),90,y+74);
+  return c.toDataURL('image/png');
+}
+function openFilePreview(id){
+  var r=byId(id); if(!r) return;
+  if(r.status!=='已上传'||!r.file){ showToast('尚未上传完工报告'); return; }
+  currentPreviewId=id;
+  $('fpTitle').textContent=r.reportNo+' · 完工报告文件预览';
+  $('fpFileName').textContent=r.file.name+' · '+r.file.size+' · '+r.file.type;
+  $('fpBody').innerHTML=previewHtml(r.file);
+  $('filePreviewModal').showModal();
+}
+function previewFromDetail(){
+  var id=currentDetailId;
+  if($('detailModal').open) $('detailModal').close();
+  openFilePreview(id);
+}
+function downloadFromPreview(){ downloadReportFile(byId(currentPreviewId)); }
+
+/* ---------- 详情 ---------- */
+function openDetail(id){
+  var r=byId(id); if(!r) return;
+  currentDetailId=id;
+  selectedId=id; render();
+  var html='<div class="detail-grid">';
+  FIELDS.forEach(function(f){
+    var v=r[f.key];
+    var full=(String(v).length>16)?' full':'';
+    html+='<div class="detail-item'+full+'"><span class="k">'+esc(f.label)+'</span><span class="v'+(v==='—'?' muted':'')+'">'+esc(v)+'</span></div>';
+  });
+  html+='</div>';
+  html+='<div class="detail-section-title">完工报告上传状态</div><div>'+tag(r.status)+'</div>';
+  html+='<div class="detail-section-title">文件信息</div>';
+  if(r.status==='已上传' && r.file){
+    var f=r.file;
+    html+='<div class="file-grid">'
+      +'<div class="file-item"><span class="k">文件名</span><span class="v"><button class="link-btn" type="button" onclick="previewFromDetail()">'+esc(f.name)+'</button></span></div>'
+      +'<div class="file-item"><span class="k">文件大小</span><span class="v">'+esc(f.size)+'</span></div>'
+      +'<div class="file-item"><span class="k">归档文件类型</span><span class="v">'+esc(f.type)+'</span></div>'
+      +'<div class="file-item"><span class="k">上传时间</span><span class="v">'+esc(f.uploadAt)+'</span></div>'
+      +'<div class="file-item"><span class="k">上传人</span><span class="v">'+esc(f.uploadBy)+'</span></div>'
+      +'</div>';
+    html+='<div class="muted" style="margin-top:8px;font-size:13px;">点击文件名可预览完工报告</div>';
+  }else{
+    html+='<div class="no-file">暂无文件，尚未上传完工报告</div>';
+  }
+  $('dBody').innerHTML=html;
+  /* 下载按钮按状态置灰 */
+  var uploaded=(r.status==='已上传');
+  $('dDownload').classList.remove('hide');
+  $('dDownload').disabled=!uploaded;
+  $('dDownload').title=uploaded?'导出完工报告信息':'尚未上传完工报告';
+  $('dReupload').classList.toggle('hide',!uploaded);
+  $('detailModal').showModal();
+}
+
+/* ---------- 编辑 ---------- */
+function buildEditGrid(r){
+  $('editGrid').innerHTML=FIELDS.map(function(f){
+    var lock=(f.key==='reportNo');
+    var err='<span class="error-msg">该项为必填项</span>';
+    return '<div class="field" id="ef-'+f.key+'">'
+      +'<label>'+esc(f.label)+(f.req?'<span class="required-mark">*</span>':'')+'</label>'
+      +'<div class="input-wrap"><input type="text" id="ed-'+f.key+'" value="'+esc(r[f.key])+'"'+(lock?' disabled':'')+'></div>'
+      +err+'</div>';
+  }).join('');
+}
+function openEdit(id){
+  var r=byId(id); if(!r) return;
+  currentEditId=id;
+  buildEditGrid(r);
+  $('editModal').showModal();
+}
+function saveEdit(){
+  var r=byId(currentEditId); if(!r) return;
+  var ok=true, changed=false, vals={};
+  FIELDS.forEach(function(f){
+    if(f.key==='reportNo') return;
+    var el=$('ed-'+f.key), wrap=$('ef-'+f.key);
+    var v=el.value.trim();
+    vals[f.key]=v;
+    if(f.req && !v){ wrap.classList.add('has-error'); ok=false; }
+    else{ wrap.classList.remove('has-error'); }
+  });
+  if(!ok){ showToast('请填写必填项'); return; }
+  FIELDS.forEach(function(f){
+    if(f.key==='reportNo') return;
+    if(r[f.key]!==vals[f.key]){ r[f.key]=vals[f.key]; changed=true; }
+  });
+  $('editModal').close();
+  render();
+  highlightRows([r.reportNo]);
+  showToast(changed?'已保存':'无变更');
+}
+function openUploadReportFromDetail(){
+  var id=currentDetailId;
+  if($('detailModal').open) $('detailModal').close();
+  openUploadReport(id);
+}
+
+/* ---------- 上传完工报告 ---------- */
+function openUploadReport(id){
+  var r=byId(id); if(!r) return;
+  currentUploadId=id;
+  $('urHint').innerHTML='完工报告编号 <b>'+esc(r.reportNo)+'</b> · '+esc(r.projectName);
+  resetDropzone('report');
+  $('uploadReportModal').showModal();
+}
+function startUpload(forceSuccess){
+  if(!reportFile){ showToast('请先选择文件'); return; }
+  /* 上传中禁用按钮并显示进度 */
+  uploadingId=currentUploadId; render();
+  $('urConfirm').disabled=true;
+  $('urFail').classList.add('hide');
+  $('urSuccess').classList.add('hide');
+  $('urRetry').classList.add('hide');
+  $('urProgress').classList.remove('hide');
+  $('urTip').textContent='上传中…';
+  var shouldFail=(!forceSuccess) && /fail|error|失败|错误/i.test(reportFile.name);
+  uploadTimer=runProgress('urProgBar','urProgPct','urTip','上传中…',function(){
+    /* 中途关闭视为取消 */
+    if(!$('uploadReportModal').open) return;
+    if(shouldFail){
+      uploadingId=null; render();
+      $('urProgress').classList.add('hide');
+      $('urFail').innerHTML=icon('alert',16).replace('<svg ','<svg style="vertical-align:-3px;margin-right:6px;" ')
+        +'<b>上传失败</b>，请点击「重试」重新上传。';
+      $('urFail').classList.remove('hide');
+      $('urRetry').classList.remove('hide');
+      $('urConfirm').classList.add('hide');
+      showToast('上传失败');
+    }else{
+      $('urProgress').classList.add('hide');
+      $('urSuccess').classList.remove('hide');
+      setTimeout(finishUploadSuccess,420);
+    }
+  });
+}
+function retryUpload(){
+  $('urFail').classList.add('hide');
+  $('urRetry').classList.add('hide');
+  $('urConfirm').classList.remove('hide');
+  resetDropzone('report');
+  useSampleFile('report');
+  startUpload(true);
+}
+function finishUploadSuccess(){
+  var r=byId(currentUploadId);
+  if(!r){ $('uploadReportModal').close(); return; }
+  /* 上传成功后落库 */
+  var kind=previewKind(reportFile.name||'');
+  var previewUrl=reportFile.previewUrl||((kind!=='none' && reportFile.raw)?URL.createObjectURL(reportFile.raw):null);
+  r.status='已上传';
+  r.file={
+    name:reportFile.name,
+    size:reportFile.size,
+    type:reportFile.type||fileType(reportFile.name),
+    uploadAt:nowStr(),
+    uploadBy:'醉工',
+    kind:kind,
+    previewUrl:previewUrl,
+    raw:(reportFile.raw||null)
+  };
+  uploadingId=null;   /* 先清瞬态，避免 close 事件误判为「取消」 */
+  $('uploadReportModal').close();
+  /* 状态流转反馈 */
+  render();
+  highlightRows([r.reportNo]);
+  showToast('完工报告已上传');
+}
+
+/* ---------- 事件绑定 ---------- */
+function bindAll(){
+  bindDropzone('info');
+  bindDropzone('report');
+  resetDropzone('info');
+  resetDropzone('report');
+
+  /* 表格操作栏 + 行选中（事件委托） */
+  $('mainTbody').addEventListener('click',function(ev){
+    var btn=ev.target.closest('button[data-act]');
+    if(btn){
+      var id=btn.getAttribute('data-id'), act=btn.getAttribute('data-act');
+      if(act==='edit') openEdit(id);
+      else if(act==='view') openDetail(id);
+      else if(act==='upload') openUploadReport(id);
+      else if(act==='download') downloadUploadedFile(id);
+      else if(act==='preview') openFilePreview(id);
+      return;
+    }
+    var tr=ev.target.closest('tr[data-id]');
+    if(tr) toggleSelect(tr.getAttribute('data-id'));
+  });
+
+  $('columnGrid').addEventListener('change',onColumnChange);
+
+  /* 弹窗关闭按钮 + 点击遮罩关闭 */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-close]'),function(b){
+    b.addEventListener('click',function(){ var d=$(b.getAttribute('data-close')); if(d && d.open) d.close(); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('dialog.modal'),function(d){
+    d.addEventListener('click',function(ev){ if(ev.target===d) d.close(); });
+  });
+  $('detailModal').addEventListener('close',function(){ selectedId=null; render(); });
+  $('uploadReportModal').addEventListener('close',function(){
+    if(uploadingId!==null){
+      if(uploadTimer) clearInterval(uploadTimer);
+      uploadingId=null; render();
+      showToast('上传已取消');
+    }
+  });
+}
+
+/* ---------- 初始化 ---------- */
+bindAll();
+showView('list');
+renderTableHead();
+render();
+resetTableScroll();
+</script>
+
+<script>
+(function(){
+  var EXPECT='6bcb6a43';
+  function h(s){var x=0x811c9dc5;for(var i=0;i<s.length;i++){x^=s.charCodeAt(i);x=Math.imul(x,0x01000193)>>>0;}return (x>>>0).toString(16);}
+  var gate=document.getElementById('gate'),pwd=document.getElementById('gatePwd'),btn=document.getElementById('gateBtn'),err=document.getElementById('gateErr');
+  function unlock(){
+    var v=pwd.value;
+    if(!v){err.textContent='请输入密码';return;}
+    if(h(v)===EXPECT){ gate.style.display='none'; pwd.value=''; }
+    else { err.textContent='密码错误，请重试'; }
+  }
+  btn.addEventListener('click',unlock);
+  pwd.addEventListener('keydown',function(e){ if(e.key==='Enter') unlock(); });
+  pwd.focus();
+})();
+</script>
+</body>
+</html>
