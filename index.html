@@ -1,19 +1,7 @@
 <!DOCTYPE html>
 <!-- 历史完工报告 · 独立需求评审页面（自包含，零外部依赖） -->
 <html lang="zh-CN">
-<head><style id="gate-style">
-#gate{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 120% at 50% 0%,#0E7490 0%,#0D9488 55%,#0B5563 100%);font-family:var(--font-sans,system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif);}
-#gate .gate-card{background:#fff;border-radius:16px;padding:34px 38px;width:min(380px,92vw);box-shadow:0 24px 70px rgba(15,23,42,.35);text-align:center;}
-#gate .gate-logo{width:56px;height:56px;margin:0 auto 6px;}
-#gate h2{margin:10px 0 4px;font-size:21px;color:#0F172A;font-weight:700;}
-#gate .sub{color:#64748B;font-size:13px;margin-bottom:20px;}
-#gate .gate-row{display:flex;gap:8px;}
-#gate input{flex:1;padding:10px 12px;border:1px solid #CBD5E1;border-radius:8px;font-size:14px;outline:none;}
-#gate input:focus{border-color:#0E7490;box-shadow:0 0 0 3px rgba(14,116,144,.15);}
-#gate .gate-btn{padding:10px 18px;border:0;border-radius:8px;background:#0E7490;color:#fff;font-size:14px;cursor:pointer;}
-#gate .gate-btn:hover{background:#155E75;}
-#gate .gate-err{color:#DC2626;font-size:13px;margin-top:10px;min-height:16px;}
-</style>
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>历史完工报告</title>
@@ -544,6 +532,7 @@ dialog.modal .actions{flex-wrap:wrap;}
   --col-date:92px;      /* 结算月份 */
   --col-status:160px;   /* 状态 */
   --col-ops:168px;      /* 操作栏（冻结末列） */
+  --col-sel:44px;       /* 选择列（冻结首列） */
   --tbl-preview-w:1900px; /* 弹窗内 16 列预览表 */
 
   /* 冻结列层级与分隔（用 box-shadow 而非 border，避免 1px 抖动） */
@@ -597,6 +586,10 @@ dialog.modal .actions{flex-wrap:wrap;}
 #mainTable col.c-date{width:var(--col-date);}
 #mainTable col.c-status{width:var(--col-status);}
 #mainTable col.c-ops{width:var(--col-ops);}
+#mainTable col.c-sel{width:var(--col-sel);}
+#previewTable col.c-sel{width:var(--col-sel);}
+.col-select{text-align:center;padding-left:0;padding-right:0;}
+.col-select input{width:16px;height:16px;margin:0;cursor:pointer;accent-color:var(--primary);vertical-align:middle;}
 /* 冻结首列与末列 */
 #mainTable thead th:first-child,
 #mainTable thead th:last-child{position:sticky;z-index:var(--z-sticky-head);background:var(--sub-surface);}
@@ -722,19 +715,29 @@ dialog.modal.preview-modal table.data tbody td{white-space:nowrap;}
 .page-head-row{display:flex;align-items:center;gap:12px;}
 .page-head-row .brand-logo{width:32px;height:32px;flex-shrink:0;}
 </style>
+<style>
+#gate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:radial-gradient(1200px 600px at 50% -10%, #0E7490 0%, #0B5566 45%, #08323F 100%);font-family:var(--font-sans);}
+#gate .card{background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(8,50,63,.35);padding:32px 28px;width:340px;text-align:center;}
+#gate h2{margin:0 0 4px;font-size:20px;color:#0F172A;}
+#gate p{margin:0 0 18px;font-size:13px;color:#64748B;}
+#gate input{width:100%;height:44px;border:1px solid #CBD5E1;border-radius:10px;padding:0 14px;font-size:15px;outline:none;box-sizing:border-box;}
+#gate input:focus{border-color:#0E7490;box-shadow:0 0 0 3px rgba(14,116,144,.18);}
+#gate button{margin-top:14px;width:100%;height:44px;border:0;border-radius:10px;background:#0E7490;color:#fff;font-size:15px;font-weight:600;cursor:pointer;}
+#gate button:hover{background:#0B6478;}
+#gate .err{margin-top:10px;color:#DC2626;font-size:13px;min-height:18px;}
+</style>
 </head>
-<body><div id="gate">
-  <div class="gate-card">
-    <div class="gate-logo"><svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#0E7490" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.4"/><path d="M12 9.6 12 2M12 14.4 19 18M12 14.4 5 18"/></svg></div>
-    <h2>历史完工报告 · 演示</h2>
-    <div class="sub">请输入查看密码以进入演示</div>
-    <div class="gate-row">
-      <input id="gatePwd" type="password" placeholder="查看密码" autocomplete="off" aria-label="查看密码">
-      <button id="gateBtn" class="gate-btn" type="button">进入</button>
-    </div>
-    <div id="gateErr" class="gate-err"></div>
+<body>
+<div id="gate">
+  <div class="card">
+    <h2>完工报告导入系统</h2>
+    <p>请输入查看密码以进入演示</p>
+    <input id="gatePwd" type="password" placeholder="查看密码" autocomplete="off">
+    <button id="gateBtn" type="button">进入</button>
+    <div class="err" id="gateErr"></div>
   </div>
 </div>
+
 <div class="app">
 
 <div class="body-wrap">
@@ -825,6 +828,7 @@ dialog.modal.preview-modal table.data tbody td{white-space:nowrap;}
             <div class="field"><label>项目编号</label><div class="input-wrap"><input type="text" id="q-projectNo" placeholder="如 XM-2026-0001"></div></div>
             <div class="field"><label>风场名称</label><div class="input-wrap"><input type="text" id="q-farm" placeholder="如 张北风电场"></div></div>
             <div class="field"><label>班组名称</label><div class="input-wrap"><input type="text" id="q-team" placeholder="如 瑞风一班"></div></div>
+            <div class="field"><label>班组所属公司</label><div class="input-wrap"><input type="text" id="q-teamCompany" placeholder="如 驭眼科技（北京）运维分公司"></div></div>
             <div class="field"><label>完工报告编号</label><div class="input-wrap"><input type="text" id="q-report" placeholder="如 WG-2026-0001"></div></div>
             <div class="field"><label>结算月份</label><div class="input-wrap"><input type="month" id="q-month"></div></div>
             <div class="field"><label>上传状态</label><div class="select-wrap"><select id="q-status"><option value="">全部</option><option value="未上传">未上传</option><option value="已上传">已上传</option></select></div></div>
@@ -838,8 +842,10 @@ dialog.modal.preview-modal table.data tbody td{white-space:nowrap;}
 
         <!-- 19 列宽表 -->
         <div class="table-toolbar">
-          <span class="t-title">查询结果 <span class="muted" id="listCount" style="font-size:14px;font-weight:400;">共 0 条（筛选后）</span></span>
+          <span class="t-title">查询结果 <span class="muted" id="listCount" style="font-size:14px;font-weight:400;">共 0 条（筛选后）</span><span id="selCount" class="muted" style="margin-left:10px;color:var(--primary);font-size:13px;font-weight:600;"></span></span>
           <div class="t-actions">
+            <button class="btn btn-secondary btn-sm" type="button" onclick="exportInfo()">导出信息</button>
+            <button class="btn btn-secondary btn-sm" type="button" onclick="exportReports()">导出完工报告</button>
             <button class="btn btn-secondary btn-sm" type="button" onclick="openColumnConfig()">配置显示字段</button>
           </div>
         </div>
@@ -928,6 +934,7 @@ dialog.modal.preview-modal table.data tbody td{white-space:nowrap;}
       </div>
     </div>
     <div class="modal-foot">
+      <span class="muted" id="previewSelCount" style="margin-right:auto;font-size:13px;"></span>
       <button class="btn btn-secondary" type="button" onclick="backToUpload()">返回重传</button>
       <button class="btn btn-primary" type="button" onclick="confirmImport()">确认导入</button>
     </div>
@@ -1135,7 +1142,7 @@ var ERROR_ROWS=[
 /* ---------- 内存态 ---------- */
 var REPORTS=[];
 var page=1, pageSize=10;
-var Q={customer:'',contract:'',project:'',projectNo:'',farm:'',team:'',report:'',month:'',status:'',key:''};
+var Q={customer:'',contract:'',project:'',projectNo:'',farm:'',team:'',teamCompany:'',report:'',month:'',status:'',key:''};
 var selectedId=null;
 var currentDetailId=null;
 var currentEditId=null;
@@ -1147,9 +1154,13 @@ var uploadTimer=null;
 var parseTimer=null;
 var highlightTimer=null;
 var currentPreviewId=null;
+/* 查询结果多选导出态 */
+var exportSel={};            /* reportNo -> true（跨页保留） */
+var currentPageIds=[];       /* 当前页展示行的 reportNo 顺序 */
+var REPORT_LINK_BASE='http://demo.bozecps.com:31328/#/completion-report/'; /* 完工报告详情深链（演示用） */
 
 /* ---------- 自定义显示字段状态 ---------- */
-var COL_W={'c-idx':48,'c-long':150,'c-mid':120,'c-code':126,'c-short':80,'c-date':92,'c-status':160,'c-ops':168};
+var COL_W={'c-idx':48,'c-long':150,'c-mid':120,'c-code':126,'c-short':80,'c-date':92,'c-status':160,'c-ops':168,'c-sel':44};
 function defaultColCfg(){ var o={}; FIELDS.forEach(function(f){ o[f.key]=true; }); o.__status=true; return o; }
 var COL_CFG=defaultColCfg();
 var COL_SNAPSHOT=null;
@@ -1161,6 +1172,7 @@ function visibleFields(){ return FIELDS.filter(function(f){ return COL_CFG[f.key
 /* 按可见列重建列组 / 表头，并同步宽表总宽 */
 function renderTableHead(){
   var tbl=$('mainTable'), cols=[], heads=[], w=0;
+  cols.push('c-sel'); heads.push('<th class="col-select"><input type="checkbox" id="mainSelectAll" title="全选本页" onclick="togglePageAll(this)"></th>'); w+=COL_W['c-sel'];
   cols.push('c-idx'); heads.push('<th class="col-index">序号</th>'); w+=COL_W['c-idx'];
   visibleFields().forEach(function(f){
     cols.push(f.cls); heads.push('<th>'+esc(f.label)+'</th>'); w+=COL_W[f.cls];
@@ -1174,9 +1186,18 @@ function renderTableHead(){
 }
 function renderPreviewHead(){
   var w=0;
-  $('previewTable').querySelector('colgroup').innerHTML=FIELDS.map(function(f){ w+=COL_W[f.cls]; return '<col class="'+f.cls+'">'; }).join('');
-  $('previewHead').innerHTML=FIELDS.map(function(f){ return '<th>'+esc(f.label)+'</th>'; }).join('');
-  document.documentElement.style.setProperty('--tbl-preview-w',(w+24)+'px');
+  $('previewTable').querySelector('colgroup').innerHTML='<col class="c-sel">'+FIELDS.map(function(f){ w+=COL_W[f.cls]; return '<col class="'+f.cls+'">'; }).join('');
+  $('previewHead').innerHTML='<th class="col-select"><input type="checkbox" id="previewSelAll" title="全选" onclick="previewToggleAll(this)"></th>'+FIELDS.map(function(f){ return '<th>'+esc(f.label)+'</th>'; }).join('');
+  document.documentElement.style.setProperty('--tbl-preview-w',(w+24+44)+'px');
+}
+function previewToggleAll(src){
+  Array.prototype.forEach.call(document.querySelectorAll('#previewTbody .impChk'), function(c){ c.checked=src.checked; });
+  previewCount();
+}
+function previewCount(){
+  var total=document.querySelectorAll('#previewTbody .impChk').length;
+  var c=document.querySelectorAll('#previewTbody .impChk:checked').length;
+  var el=$('previewSelCount'); if(el) el.textContent='已选 '+c+' / '+total+' 条';
 }
 function renderColumnConfig(){
   $('columnGrid').innerHTML=colItems().map(function(f){
@@ -1224,6 +1245,7 @@ function filtered(){
     if(Q.projectNo && String(r.projectNo||'').toLowerCase().indexOf(Q.projectNo.toLowerCase())<0) return false;
     if(Q.farm && r.windFarm.toLowerCase().indexOf(Q.farm.toLowerCase())<0) return false;
     if(Q.team && r.teamName.toLowerCase().indexOf(Q.team.toLowerCase())<0) return false;
+    if(Q.teamCompany && (r.teamCompany||'').toLowerCase().indexOf(Q.teamCompany.toLowerCase())<0) return false;
     if(Q.report && r.reportNo.toLowerCase().indexOf(Q.report.toLowerCase())<0) return false;
     if(Q.month && r.month!==Q.month) return false;
     if(Q.status && r.status!==Q.status) return false;
@@ -1238,14 +1260,14 @@ function filtered(){
 function runQuery(){
   Q.customer=$('q-customer').value.trim(); Q.contract=$('q-contract').value.trim();
   Q.project=$('q-project').value.trim(); Q.projectNo=$('q-projectNo').value.trim(); Q.farm=$('q-farm').value.trim();
-  Q.team=$('q-team').value.trim(); Q.report=$('q-report').value.trim();
+  Q.team=$('q-team').value.trim(); Q.teamCompany=$('q-teamCompany').value.trim(); Q.report=$('q-report').value.trim();
   Q.month=$('q-month').value; Q.status=$('q-status').value; Q.key=$('q-key').value.trim();
   page=1; render();
   showToast('共 '+filtered().length+' 条');
 }
 function resetQuery(){
-  ['q-customer','q-contract','q-project','q-projectNo','q-farm','q-team','q-report','q-month','q-status','q-key'].forEach(function(id){ $(id).value=''; });
-  Q={customer:'',contract:'',project:'',projectNo:'',farm:'',team:'',report:'',month:'',status:'',key:''};
+  ['q-customer','q-contract','q-project','q-projectNo','q-farm','q-team','q-teamCompany','q-report','q-month','q-status','q-key'].forEach(function(id){ $(id).value=''; });
+  Q={customer:'',contract:'',project:'',projectNo:'',farm:'',team:'',teamCompany:'',report:'',month:'',status:'',key:''};
   page=1; render();
   showToast('已重置');
 }
@@ -1302,9 +1324,11 @@ function renderRows(list,start){
   }
   var vf=visibleFields();
   var showStatus=(COL_CFG.__status!==false);
+  currentPageIds=list.map(function(r){ return r.reportNo; });
   tb.innerHTML=list.map(function(r,i){
     var sel=(selectedId===r.reportNo)?' row-selected':'';
     return '<tr data-id="'+esc(r.reportNo)+'" class="'+sel.trim()+'">'
+      +'<td class="col-select"><input type="checkbox" class="rowChk" data-id="'+esc(r.reportNo)+'"'+(exportSel[r.reportNo]?' checked':'')+'></td>'
       +'<td class="col-index num">'+(start+i+1)+'</td>'
       +vf.map(function(f){ return cellHtml(r,f); }).join('')
       +(showStatus?'<td>'+tag(r.status)+'</td>':'')
@@ -1331,6 +1355,7 @@ function render(){
   var cnt='共 '+total+' 条'+(REPORTS.length!==total?'（筛选后）':'');
   $('resultCount').textContent=cnt;
   $('listCount').textContent='共 '+total+' 条（筛选后）';
+  updateSelAllState(); updateSelCount();
 }
 function goPage(d){ page+=d; render(); }
 function changePageSize(){ pageSize=parseInt($('pg-size').value,10)||10; page=1; render(); }
@@ -1365,6 +1390,121 @@ function downloadBlob(content,filename,mime){
   setTimeout(function(){ URL.revokeObjectURL(a.href); },2000);
 }
 function csvCell(v){ v=String(v==null?'':v); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+
+/* ---------- 多选导出：导出信息（Excel）/ 导出完工报告（ZIP） ---------- */
+/* 纯前端实现，零外部依赖：手写 ZIP（STORE 法 + UTF-8 文件名标记）与 XLSX（最小 SpreadsheetML） */
+function reportLink(r){ return REPORT_LINK_BASE + encodeURIComponent(r.reportNo); }
+function selectedExportIds(){ return Object.keys(exportSel).filter(function(id){ return exportSel[id] && byId(id); }); }
+function updateSelCount(){
+  var n=selectedExportIds().length, el=$('selCount');
+  if(el) el.textContent = n? ('已选 '+n+' 条') : '';
+}
+function updateSelAllState(){
+  var all=$('mainSelectAll'); if(!all) return;
+  var ids=currentPageIds, total=ids.length, sel=0;
+  ids.forEach(function(id){ if(exportSel[id]) sel++; });
+  all.checked = (total>0 && sel===total);
+  all.indeterminate = (sel>0 && sel<total);
+}
+function togglePageAll(src){
+  currentPageIds.forEach(function(id){ exportSel[id]=src.checked; });
+  render();
+}
+function strToU8(s){ return new TextEncoder().encode(s); }
+function crc32(buf){
+  var c, t=crc32._t||(crc32._t=(function(){ var a=[]; for(var n=0;n<256;n++){ c=n; for(var k=0;k<8;k++){ c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); } a[n]=c>>>0; } return a; })());
+  var crc=0xFFFFFFFF;
+  for(var i=0;i<buf.length;i++){ crc=(crc>>>8) ^ t[(crc ^ buf[i]) & 0xFF]; }
+  return (crc ^ 0xFFFFFFFF)>>>0;
+}
+/* files: [{name, data:Uint8Array}] → 返回 Uint8Array（完整 ZIP） */
+function buildZip(files){
+  var chunks=[], central=[], offset=0;
+  files.forEach(function(f){
+    var nameU8=strToU8(f.name), data=f.data, size=data.length, crc=crc32(data);
+    var lh=new Uint8Array(30+nameU8.length), dv=new DataView(lh.buffer);
+    dv.setUint32(0,0x04034b50,true); dv.setUint16(4,20,true); dv.setUint16(6,0x0800,true);
+    dv.setUint16(8,0,true); dv.setUint16(10,0,true); dv.setUint16(12,0,true);
+    dv.setUint32(14,crc,true); dv.setUint32(18,size,true); dv.setUint32(22,size,true);
+    dv.setUint16(26,nameU8.length,true); dv.setUint16(28,0,true);
+    lh.set(nameU8,30); chunks.push(lh); chunks.push(data);
+    var ch=new Uint8Array(46+nameU8.length), cd=new DataView(ch.buffer);
+    cd.setUint32(0,0x02014b50,true); cd.setUint16(4,20,true); cd.setUint16(6,20,true);
+    cd.setUint16(8,0x0800,true); cd.setUint16(10,0,true); cd.setUint16(12,0,true); cd.setUint16(14,0,true);
+    cd.setUint32(16,crc,true); cd.setUint32(20,size,true); cd.setUint32(24,size,true);
+    cd.setUint16(28,nameU8.length,true); cd.setUint16(30,0,true); cd.setUint16(32,0,true);
+    cd.setUint16(34,0,true); cd.setUint16(36,0,true); cd.setUint32(38,0,true); cd.setUint32(42,offset,true);
+    ch.set(nameU8,46); central.push(ch);
+    offset += lh.length + data.length;
+  });
+  var centralSize=central.reduce(function(a,c){ return a+c.length; },0), centralOffset=offset;
+  var eocd=new Uint8Array(22), ed=new DataView(eocd.buffer);
+  ed.setUint32(0,0x06054b50,true); ed.setUint16(4,0,true); ed.setUint16(6,0,true);
+  ed.setUint16(8,files.length,true); ed.setUint16(10,files.length,true);
+  ed.setUint32(12,centralSize,true); ed.setUint32(16,centralOffset,true); ed.setUint16(20,0,true);
+  var all=chunks.concat(central,[eocd]), total=all.reduce(function(a,c){ return a+c.length; },0), out=new Uint8Array(total), p=0;
+  all.forEach(function(c){ out.set(c,p); p+=c.length; });
+  return out;
+}
+function buildXlsx(headers, rows){
+  function colL(n){ var s=''; while(n>0){ var m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26); } return s; }
+  function xe(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  var headCells='';
+  headers.forEach(function(h,i){ headCells+='<c r="'+colL(i+1)+'1" t="inlineStr"><is><t xml:space="preserve">'+xe(h)+'</t></is></c>'; });
+  var bodyRows='';
+  rows.forEach(function(row,ri){
+    var r=ri+2, cells='';
+    row.forEach(function(v,i){ cells+='<c r="'+colL(i+1)+r+'" t="inlineStr"><is><t xml:space="preserve">'+xe(v)+'</t></is></c>'; });
+    bodyRows+='<row r="'+r+'">'+cells+'</row>';
+  });
+  var sheet='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1">'+headCells+'</row>'+bodyRows+'</sheetData></worksheet>';
+  var workbook='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="完工报告信息" sheetId="1" r:id="rId1"/></sheets></workbook>';
+  var wbRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  var rootRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+  var contentTypes='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>';
+  var styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"></styleSheet>';
+  var files=[
+    {name:'[Content_Types].xml', data:strToU8(contentTypes)},
+    {name:'_rels/.rels', data:strToU8(rootRels)},
+    {name:'xl/workbook.xml', data:strToU8(workbook)},
+    {name:'xl/_rels/workbook.xml.rels', data:strToU8(wbRels)},
+    {name:'xl/worksheets/sheet1.xml', data:strToU8(sheet)},
+    {name:'xl/styles.xml', data:strToU8(styles)}
+  ];
+  return new Blob([buildZip(files)], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+function nowStamp(){ var d=new Date(); function p(n){ return String(n).padStart(2,'0'); } return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds()); }
+/* 导出信息：选中记录 + 导入字段 + 完工报告链接 → Excel */
+async function exportInfo(){
+  var ids=selectedExportIds();
+  if(!ids.length){ showToast('请先在查询结果中勾选要导出的记录'); return; }
+  var headers=FIELDS.map(function(f){ return f.label; }).concat(['完工报告链接']);
+  var rows=ids.map(function(id){
+    var r=byId(id), row=FIELDS.map(function(f){ return r?r[f.key]:''; });
+    if(r) row.push(reportLink(r)); else row.push('');
+    return row;
+  });
+  var blob=buildXlsx(headers, rows);
+  downloadBlob(blob, '完工报告信息_'+nowStamp()+'.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  showToast('已导出 '+ids.length+' 条记录（Excel）');
+}
+/* 导出完工报告：选中记录对应的已上传完工报告文件 → ZIP 压缩包 */
+async function exportReports(){
+  var ids=selectedExportIds();
+  if(!ids.length){ showToast('请先在查询结果中勾选要导出的记录'); return; }
+  showToast('正在打包完工报告…');
+  var files=[];
+  for(var i=0;i<ids.length;i++){
+    var r=byId(ids[i]);
+    if(r && r.status==='已上传' && r.file && r.file.raw){
+      try{ var u8=new Uint8Array(await r.file.raw.arrayBuffer()); files.push({name:r.reportNo+'_'+r.file.name, data:u8}); }catch(e){}
+    }
+  }
+  if(!files.length){ showToast('所选记录中暂无已上传的完工报告文件'); return; }
+  var zip=buildZip(files);
+  downloadBlob(zip, '完工报告_'+nowStamp()+'.zip', 'application/zip');
+  showToast('已导出 '+files.length+' 份完工报告（压缩包）');
+}
 
 /* 下载信息表模板 */
 function downloadTemplate(){
@@ -1548,20 +1688,26 @@ function openPreview(){
     +'共解析 '+PREVIEW_DATA.length+' 条，校验通过';
   renderPreviewHead();
   $('previewTbody').innerHTML=PREVIEW_DATA.map(function(r){
-    return '<tr>'+FIELDS.map(function(f){
-      var v=r[f.key];
-      var cls=(MONO_KEYS[f.key]?'mono ':'')+'clip';
-      var inner=(v==='—')?'<span class="muted">—</span>':esc(v);
-      return '<td class="'+cls+'" title="'+esc(v)+'">'+inner+'</td>';
-    }).join('')+'</tr>';
+    return '<tr>'
+      +'<td class="col-select"><input type="checkbox" class="impChk" data-id="'+esc(r.reportNo)+'" checked></td>'
+      +FIELDS.map(function(f){
+        var v=r[f.key];
+        var cls=(MONO_KEYS[f.key]?'mono ':'')+'clip';
+        var inner=(v==='—')?'<span class="muted">—</span>':esc(v);
+        return '<td class="'+cls+'" title="'+esc(v)+'">'+inner+'</td>';
+      }).join('')+'</tr>';
   }).join('');
+  previewCount();
   $('previewModal').showModal();
 }
 function backToUpload(){ $('previewModal').close(); openUploadInfo(); }
 function confirmImport(){
   var existing={}, added=[];
   REPORTS.forEach(function(r){ existing[r.reportNo]=1; });
+  var unchecked={};
+  Array.prototype.forEach.call(document.querySelectorAll('#previewTbody .impChk'), function(c){ if(!c.checked) unchecked[c.getAttribute('data-id')]=1; });
   PREVIEW_DATA.forEach(function(r){
+    if(unchecked[r.reportNo]) return;
     if(!existing[r.reportNo]){ var rec=clone(r); rec.status='未上传'; rec.file=null; REPORTS.push(rec); existing[r.reportNo]=1; added.push(r.reportNo); }
   });
   selectedId=null; page=1;
@@ -1811,7 +1957,13 @@ function bindAll(){
       else if(act==='view') openDetail(id);
       else if(act==='upload') openUploadReport(id);
       else if(act==='download') downloadUploadedFile(id);
-      else if(act==='preview') openFilePreview(id);
+      else     if(act==='preview') openFilePreview(id);
+      return;
+    }
+    var selCell=ev.target.closest('.col-select');
+    if(selCell){
+      var cb=ev.target.closest('.rowChk');
+      if(cb){ exportSel[cb.getAttribute('data-id')]=cb.checked; updateSelAllState(); updateSelCount(); }
       return;
     }
     var tr=ev.target.closest('tr[data-id]');
@@ -1850,14 +2002,9 @@ resetTableScroll();
   var EXPECT='6bcb6a43';
   function h(s){var x=0x811c9dc5;for(var i=0;i<s.length;i++){x^=s.charCodeAt(i);x=Math.imul(x,0x01000193)>>>0;}return (x>>>0).toString(16);}
   var gate=document.getElementById('gate'),pwd=document.getElementById('gatePwd'),btn=document.getElementById('gateBtn'),err=document.getElementById('gateErr');
-  function unlock(){
-    var v=pwd.value;
-    if(!v){err.textContent='请输入密码';return;}
-    if(h(v)===EXPECT){ gate.style.display='none'; pwd.value=''; }
-    else { err.textContent='密码错误，请重试'; }
-  }
+  function unlock(){var v=pwd.value;if(!v){err.textContent='请输入密码';return;}if(h(v)===EXPECT){gate.style.display='none';pwd.value='';}else{err.textContent='密码错误，请重试';}}
   btn.addEventListener('click',unlock);
-  pwd.addEventListener('keydown',function(e){ if(e.key==='Enter') unlock(); });
+  pwd.addEventListener('keydown',function(e){if(e.key==='Enter')unlock();});
   pwd.focus();
 })();
 </script>
